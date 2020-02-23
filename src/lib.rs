@@ -1,5 +1,7 @@
 mod cli;
+mod error;
 mod windowmanager;
 
 pub use cli::*;
-pub use windowmanager::{ConnectionErrorOrX11Error, WinInfo, WindowManager};
+pub use error::Error;
+pub use windowmanager::{WinInfo, WindowManager};

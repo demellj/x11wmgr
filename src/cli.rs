@@ -23,7 +23,7 @@ pub struct WinZIndex {
 pub enum Request {
     ChangeVisiblity(Vec<WinVisbilty>),
     ChangeZIndex(Vec<WinZIndex>),
-    ListNewWindow,
+    ListNewWindows,
     RestackWindows,
 }
 
@@ -32,7 +32,18 @@ pub enum Response {
     VisibiltyChanged(Vec<WINDOW>),
     ZIndexChanged(Vec<WINDOW>),
     NewWindows(Vec<WINDOW>),
-    RestackComplete
+    RestackComplete,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+enum ErrorType {
+    InvalidInput(String),
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+enum Message {
+    Error(ErrorType),
+    Response(Response),
 }
 
 pub fn create_cli(tx_req: Sender<Request>) -> Sender<Response> {
@@ -41,16 +52,21 @@ pub fn create_cli(tx_req: Sender<Request>) -> Sender<Response> {
     thread::spawn(move || {
         let mut line = String::new();
 
-        while let Ok(_) = io::stdin().read_line(&mut line) {
-            if let Ok(req) = de::from_str::<Request>(line.as_ref()) {
+        while io::stdin().read_line(&mut line).is_ok() {
+            if let Ok(req) = de::from_str::<Request>(&line) {
                 if tx_req.send(req).is_ok() {
                     if let Ok(resp) = rx_resp.recv() {
-                        if let Ok(resp) = ser::to_string(&resp) {
+                        if let Ok(resp) = ser::to_string(&Message::Response(resp)) {
                             println!("{}", resp);
                         }
                     }
                 }
+            } else {
+                let msg = line.trim().to_owned();
+                let resp = Message::Error(ErrorType::InvalidInput(msg));
+                println!("{}", ser::to_string(&resp).unwrap());
             }
+            line.clear();
         }
     });
 

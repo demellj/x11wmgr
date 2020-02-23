@@ -4,4 +4,4 @@ mod windowmanager;
 
 pub use cli::*;
 pub use error::Error;
-pub use windowmanager::{WinInfo, WindowManager};
+pub use windowmanager::WindowManager;

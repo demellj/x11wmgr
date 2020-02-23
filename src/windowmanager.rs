@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use std::time::Instant;
+
 use std::process::exit;
 
 use x11rb::connection::Connection;
@@ -11,17 +13,29 @@ pub use x11rb::errors::ConnectionErrorOrX11Error;
 pub use x11rb::generated::xproto::WINDOW;
 
 #[derive(Clone, Debug)]
-pub struct WinInfo {
-    pub id: WINDOW,
-    pub index: u32,
+struct WinInfo {
+    id: WINDOW,
+    index: u32,
+
+    // the time the window as mapped/discovered
+    discovery_time: Instant,
+
+    // last time window zindex or visibilty was updated
+    last_update_time: Instant,
 }
 
 pub struct WindowManager {
     conn: XCBConnection,
     screen_num: usize,
+
+    // windows that are currently in the visible stack
     visible_wins: HashMap<WINDOW, WinInfo>,
+
+    // windows that are currently in the hidden stack
     hidden_wins: HashMap<WINDOW, WinInfo>,
-    new_wins: Vec<WINDOW>,
+
+    // the last time new windows were queried
+    last_discovery_time: Instant,
 }
 
 impl WindowManager {
@@ -33,7 +47,7 @@ impl WindowManager {
             screen_num: screen_num,
             visible_wins: HashMap::new(),
             hidden_wins: HashMap::new(),
-            new_wins: Vec::new(),
+            last_discovery_time: Instant::now(),
         };
 
         wm.become_wm()?;
@@ -60,11 +74,13 @@ impl WindowManager {
             if let Some(v) = self.hidden_wins.get_mut(&id) {
                 if v.index != index {
                     v.index = index;
+                    v.last_update_time = Instant::now();
                     changed_wins.push(id);
                 }
             } else if let Some(v) = self.visible_wins.get_mut(&id) {
                 if v.index != index {
                     v.index = index;
+                    v.last_update_time = Instant::now();
                     changed_wins.push(id);
                 }
             }
@@ -81,12 +97,14 @@ impl WindowManager {
 
         for (winid, to_visible) in iter {
             if to_visible {
-                if let Some(v) = self.hidden_wins.remove(&winid) {
+                if let Some(mut v) = self.hidden_wins.remove(&winid) {
+                    v.last_update_time = Instant::now();
                     self.visible_wins.insert(winid, v);
                     changed_wins.push(winid);
                 }
             } else {
-                if let Some(v) = self.visible_wins.remove(&winid) {
+                if let Some(mut v) = self.visible_wins.remove(&winid) {
+                    v.last_update_time = Instant::now();
                     self.hidden_wins.insert(winid, v);
                     changed_wins.push(winid);
                 }
@@ -131,7 +149,15 @@ impl WindowManager {
 
     // check new wins are remove them from new window queue
     pub fn check_new(&mut self) -> Vec<WINDOW> {
-        self.new_wins.drain(..).collect()
+        let mut new_wins = Vec::new();
+        // new windows only go into hidden_wins
+        for wininfo in self.hidden_wins.values() {
+            if wininfo.discovery_time >= self.last_discovery_time {
+                new_wins.push(wininfo.id);
+            }
+        }
+        self.last_discovery_time = Instant::now();
+        new_wins
     }
 
     fn screen_ref(&self) -> &Screen {
@@ -185,8 +211,12 @@ impl WindowManager {
 
             // ignore unmapped windows, or windows with override-redirect set
             if !attr.override_redirect && attr.map_state != unmapped {
-                wins.entry(win).or_insert(WinInfo { id: win, index: 0 });
-                self.new_wins.push(win);
+                wins.entry(win).or_insert(WinInfo { 
+                    id: win, 
+                    index: 0,
+                    discovery_time: Instant::now(),
+                    last_update_time: Instant::now(),
+                });
             }
         }
 
@@ -235,9 +265,12 @@ impl WindowManager {
         // track window
         self.hidden_wins
             .entry(win)
-            .or_insert(WinInfo { id: win, index: 0 });
-
-        self.new_wins.push(win);
+            .or_insert(WinInfo {
+                id: win,
+                index: 0,
+                discovery_time: Instant::now(),
+                last_update_time: Instant::now(),
+            });
 
         self.conn.map_window(win)?;
 

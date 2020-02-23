@@ -1,6 +1,5 @@
 use std::cmp;
 use std::collections::HashMap;
-use std::process::exit;
 use std::time::Instant;
 
 use std::sync::Arc;
@@ -260,14 +259,10 @@ impl WindowManager {
         let error = self.conn.change_window_attributes(root, &change)?.check()?;
 
         if let Some(error) = error {
-            if error.error_code() == ACCESS_ERROR {
-                eprintln!("Another WM is already running.");
-                exit(1);
-            }
-            return Err(error.into());
+            Err(error.into())
+        } else {
+            Ok(())
         }
-
-        Ok(())
     }
 
     fn scan_windows(&mut self) -> Result<(), Error> {

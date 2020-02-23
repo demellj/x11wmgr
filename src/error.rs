@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use std::io::Error as IOError;
 use std::sync::mpsc::SendError;
+use x11rb::generated::xproto::ACCESS_ERROR;
 use x11rb::errors::ConnectionError;
 use x11rb::errors::ConnectionErrorOrX11Error;
 use x11rb::errors::ParseError;
@@ -37,7 +38,19 @@ pub struct Error(Arc<Context<ErrorKind>>);
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> DisplayResult {
-        write!(f, "{}", self.0.get_context())
+        let ctx = self.0.get_context();
+        match ctx {
+            ErrorKind::GenericX11Error(err) => {
+                if err.error_code() == ACCESS_ERROR {
+                    write!(f, "Another window manager is active")
+                } else {
+                    write!(f, "{}", ctx)
+                }
+            }
+            _ => {
+                write!(f, "{}", self.0.get_context())
+            }
+        }
     }
 }
 

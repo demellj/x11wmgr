@@ -48,7 +48,7 @@ impl Display for Error {
                 }
             }
             _ => {
-                write!(f, "{}", self.0.get_context())
+                write!(f, "{}", ctx)
             }
         }
     }

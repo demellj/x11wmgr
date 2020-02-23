@@ -7,6 +7,9 @@ use x11rb::errors::ConnectionError;
 use x11rb::errors::ConnectionErrorOrX11Error;
 use x11rb::errors::ParseError;
 use x11rb::x11_utils::GenericError;
+use std::sync::mpsc::SendError;
+
+use crate::cli::Response;
 
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
@@ -24,6 +27,9 @@ pub enum ErrorKind {
 
     #[fail(display = "An internal error occurred")]
     ParseError(#[cause] ParseError),
+
+    #[fail(display = "An internal error occurred")]
+    SendError(#[cause] SendError<Response>),
 }
 
 #[derive(Debug, Clone)]
@@ -83,6 +89,14 @@ impl From<GenericError> for Error {
     fn from(error: GenericError) -> Self {
         Error {
             ctx: Arc::new(Context::new(ErrorKind::GenericX11Error(error))),
+        }
+    }
+}
+
+impl From<SendError<Response>> for Error {
+    fn from(error: SendError<Response>) -> Self {
+        Error {
+            ctx: Arc::new(Context::new(ErrorKind::SendError(error))),
         }
     }
 }

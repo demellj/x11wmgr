@@ -12,6 +12,8 @@ use x11rb::xcb_ffi::XCBConnection;
 pub use x11rb::errors::ConnectionErrorOrX11Error;
 pub use x11rb::generated::xproto::WINDOW;
 
+use crate::error::*;
+
 #[derive(Clone, Debug)]
 struct WinInfo {
     id: WINDOW,
@@ -39,7 +41,7 @@ pub struct WindowManager {
 }
 
 impl WindowManager {
-    pub fn new() -> Result<Self, ConnectionErrorOrX11Error> {
+    pub fn new() -> Result<Self, Error> {
         let (conn, screen_num) = XCBConnection::connect(None)?;
 
         let mut wm = WindowManager {
@@ -56,7 +58,7 @@ impl WindowManager {
         Ok(wm)
     }
 
-    pub fn process_events(&mut self) -> Result<(), ConnectionErrorOrX11Error> {
+    pub fn process_events(&mut self) -> Result<(), Error> {
         if let Ok(Some(event)) = self.conn.poll_for_event() {
             self.handle_event(event)
         } else {
@@ -115,7 +117,7 @@ impl WindowManager {
     }
 
     // restack windows
-    pub fn restack_windows(&self) -> Result<(), ConnectionErrorOrX11Error> {
+    pub fn restack_windows(&self) -> Result<(), Error> {
         let mut aux = ConfigureWindowAux::default();
 
         // sort visible by zindex
@@ -164,7 +166,7 @@ impl WindowManager {
         &self.conn.setup().roots[self.screen_num]
     }
 
-    fn become_wm(&self) -> Result<(), ConnectionErrorOrX11Error> {
+    fn become_wm(&self) -> Result<(), Error> {
         let mask = EventMask::SubstructureRedirect
             | EventMask::SubstructureNotify
             | EventMask::EnterWindow;
@@ -186,7 +188,7 @@ impl WindowManager {
         Ok(())
     }
 
-    fn scan_windows(&mut self) -> Result<(), ConnectionErrorOrX11Error> {
+    fn scan_windows(&mut self) -> Result<(), Error> {
         let tree_reply = self.conn.query_tree(self.screen_ref().root)?.reply()?;
 
         // For each window, request its attributes and geometry *now*
@@ -211,8 +213,8 @@ impl WindowManager {
 
             // ignore unmapped windows, or windows with override-redirect set
             if !attr.override_redirect && attr.map_state != unmapped {
-                wins.entry(win).or_insert(WinInfo { 
-                    id: win, 
+                wins.entry(win).or_insert(WinInfo {
+                    id: win,
                     index: 0,
                     discovery_time: Instant::now(),
                     last_update_time: Instant::now(),
@@ -223,10 +225,7 @@ impl WindowManager {
         Ok(())
     }
 
-    fn handle_configure_request(
-        &self,
-        event: ConfigureRequestEvent,
-    ) -> Result<(), ConnectionErrorOrX11Error> {
+    fn handle_configure_request(&self, event: ConfigureRequestEvent) -> Result<(), Error> {
         let mut aux = ConfigureWindowAux::default();
 
         let x: u16 = ConfigWindow::X.into();
@@ -255,32 +254,24 @@ impl WindowManager {
         Ok(())
     }
 
-    fn handle_map_request(
-        &mut self,
-        event: MapRequestEvent,
-    ) -> Result<(), ConnectionErrorOrX11Error> {
+    fn handle_map_request(&mut self, event: MapRequestEvent) -> Result<(), Error> {
         // let geom = self.conn.get_geometry(event.window)?.reply()?;
         let win = event.window;
 
         // track window
-        self.hidden_wins
-            .entry(win)
-            .or_insert(WinInfo {
-                id: win,
-                index: 0,
-                discovery_time: Instant::now(),
-                last_update_time: Instant::now(),
-            });
+        self.hidden_wins.entry(win).or_insert(WinInfo {
+            id: win,
+            index: 0,
+            discovery_time: Instant::now(),
+            last_update_time: Instant::now(),
+        });
 
         self.conn.map_window(win)?;
 
         Ok(())
     }
 
-    fn handle_unmap_notify(
-        &mut self,
-        event: UnmapNotifyEvent,
-    ) -> Result<(), ConnectionErrorOrX11Error> {
+    fn handle_unmap_notify(&mut self, event: UnmapNotifyEvent) -> Result<(), Error> {
         self.hidden_wins.remove(&event.window);
         self.visible_wins.remove(&event.window);
         eprintln!("window {:#x} unmapped and removed", event.window);
@@ -288,7 +279,7 @@ impl WindowManager {
     }
 
     // focus follows mouse
-    fn handle_enter(&self, event: EnterNotifyEvent) -> Result<(), ConnectionErrorOrX11Error> {
+    fn handle_enter(&self, event: EnterNotifyEvent) -> Result<(), Error> {
         let window = if let Some(_) = self.visible_wins.get(&event.child) {
             event.child
         } else {
@@ -300,7 +291,7 @@ impl WindowManager {
         Ok(())
     }
 
-    fn handle_event(&mut self, event: GenericEvent) -> Result<(), ConnectionErrorOrX11Error> {
+    fn handle_event(&mut self, event: GenericEvent) -> Result<(), Error> {
         // println!("Got event {:?}", event);
 
         match event.response_type() {

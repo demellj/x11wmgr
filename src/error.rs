@@ -3,12 +3,20 @@ use std::fmt::{Display, Formatter, Result as DisplayResult};
 use std::sync::Arc;
 
 use std::io::Error as IOError;
+use x11rb::errors::ConnectionError;
 use x11rb::errors::ConnectionErrorOrX11Error;
+use x11rb::x11_utils::GenericError;
 
 #[derive(Debug, Fail)]
 pub enum ErrorKind {
     #[fail(display = "An X11 error occurred")]
     X11Error(#[cause] ConnectionErrorOrX11Error),
+
+    #[fail(display = "XCB connection failed")]
+    XCBError(#[cause] ConnectionError),
+
+    #[fail(display = "An X11 error occurred")]
+    GenericX11Error(GenericError),
 
     #[fail(display = "An IO error occurred")]
     IOError(#[cause] IOError),
@@ -47,6 +55,22 @@ impl From<ConnectionErrorOrX11Error> for Error {
     fn from(error: ConnectionErrorOrX11Error) -> Self {
         Error {
             ctx: Arc::new(Context::new(ErrorKind::X11Error(error))),
+        }
+    }
+}
+
+impl From<ConnectionError> for Error {
+    fn from(error: ConnectionError) -> Self {
+        Error {
+            ctx: Arc::new(Context::new(ErrorKind::XCBError(error))),
+        }
+    }
+}
+
+impl From<GenericError> for Error {
+    fn from(error: GenericError) -> Self {
+        Error {
+            ctx: Arc::new(Context::new(ErrorKind::GenericX11Error(error))),
         }
     }
 }

@@ -9,7 +9,6 @@ use x11rb::generated::xproto::*;
 use x11rb::x11_utils::{Event, GenericEvent};
 use x11rb::xcb_ffi::XCBConnection;
 
-pub use x11rb::errors::ConnectionErrorOrX11Error;
 pub use x11rb::generated::xproto::WINDOW;
 
 use crate::error::*;
@@ -292,7 +291,7 @@ impl WindowManager {
     }
 
     fn handle_event(&mut self, event: GenericEvent) -> Result<(), Error> {
-        // println!("Got event {:?}", event);
+        // eprintln!("Got event {:?}", event);
 
         match event.response_type() {
             UNMAP_NOTIFY_EVENT => self.handle_unmap_notify(event.into()),

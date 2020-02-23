@@ -23,13 +23,11 @@ fn main() -> Result<(), Error> {
 fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Error> {
     let resp = match req {
         Request::ChangeVisiblity(win_vis) => {
-            let result =
-                wm.change_visiblity(win_vis.into_iter().map(|v| (v.id, v.visible)));
+            let result = wm.change_visiblity(win_vis.into_iter().map(|v| (v.id, v.visible)));
             Response::VisibiltyChanged(result)
         }
         Request::ChangeZIndex(win_indices) => {
-            let result =
-                wm.change_indices(win_indices.into_iter().map(|v| (v.id, v.zindex)));
+            let result = wm.change_indices(win_indices.into_iter().map(|v| (v.id, v.zindex)));
             Response::ZIndexChanged(result)
         }
         Request::ListNewWindows => {

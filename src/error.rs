@@ -3,11 +3,11 @@ use std::fmt::{Display, Formatter, Result as DisplayResult};
 use std::sync::Arc;
 
 use std::io::Error as IOError;
+use std::sync::mpsc::SendError;
 use x11rb::errors::ConnectionError;
 use x11rb::errors::ConnectionErrorOrX11Error;
 use x11rb::errors::ParseError;
 use x11rb::x11_utils::GenericError;
-use std::sync::mpsc::SendError;
 
 use crate::cli::Response;
 

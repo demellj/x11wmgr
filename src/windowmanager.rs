@@ -56,14 +56,18 @@ pub struct WindowManager {
 impl Waker {
     // wake up wm thread, notifying it of pending input
     pub fn wake(&self) -> Result<(), Error> {
-        self.conn.send_event(
+        let cookie = self.conn.send_event(
             false,
             self.win,
             EventMask::SubstructureNotify.into(),
             &self.event,
         )?;
-        self.conn.flush();
-        Ok(())
+
+        if let Some(err) = cookie.check()? {
+            Err(err.into())
+        } else {
+            Ok(())
+        }
     }
 }
 

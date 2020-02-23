@@ -2,7 +2,18 @@ use std::sync::mpsc::channel;
 
 use x11wmgr::*;
 
-fn main() -> Result<(), Error> {
+fn main() {
+    let name = std::env::args().nth(0).unwrap_or_default();
+    if let Err(err) = run() {
+        if name.is_empty() {
+            eprintln!("{}", err);
+        } else {
+            eprintln!("{}: {}", name, err);
+        }
+    }
+}
+
+fn run() -> Result<(), Error> {
     let mut wm = WindowManager::new()?;
 
     let waker = wm.create_waker()?;

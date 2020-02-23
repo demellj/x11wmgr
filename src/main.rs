@@ -1,19 +1,16 @@
 use std::sync::mpsc::channel;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
 
 use x11wmgr::*;
 
 fn main() -> Result<(), Error> {
-    let min_wait = Duration::from_millis(100);
-
     let mut wm = WindowManager::new()?;
 
+    let waker = wm.create_waker()?;
+
     let (tx_req, rx_req) = channel::<Request>();
-    let tx_resp = create_cli(tx_req);
+    let tx_resp = create_cli(waker, tx_req)?;
 
     loop {
-        let start = Instant::now();
         wm.process_events()?;
 
         if let Ok(req) = rx_req.try_recv() {
@@ -32,16 +29,33 @@ fn main() -> Result<(), Error> {
                     let new_wins = wm.check_new();
                     tx_resp.send(Response::NewWindows(new_wins)).unwrap();
                 }
+                Request::ListVisibleWindows => {
+                    let wins = wm
+                        .get_visible_wins()
+                        .into_iter()
+                        .map(|(id, indx)| WinZIndex {
+                            id: id,
+                            zindex: indx,
+                        })
+                        .collect();
+                    tx_resp.send(Response::VisibleWindows(wins)).unwrap();
+                }
+                Request::ListHiddenWindows => {
+                    let wins = wm
+                        .get_hidden_wins()
+                        .into_iter()
+                        .map(|(id, indx)| WinZIndex {
+                            id: id,
+                            zindex: indx,
+                        })
+                        .collect();
+                    tx_resp.send(Response::HiddenWindows(wins)).unwrap();
+                }
                 Request::RestackWindows => {
                     wm.restack_windows()?;
                     tx_resp.send(Response::RestackComplete).unwrap();
                 }
             }
-        }
-
-        let diff = Instant::now() - start;
-        if diff < min_wait {
-            sleep(min_wait - diff);
         }
     }
 }

@@ -5,7 +5,8 @@ use std::thread;
 use serde::{Deserialize, Serialize};
 use serde_json::{de, ser};
 
-use crate::windowmanager::WINDOW;
+use crate::error::*;
+use crate::windowmanager::{Waker, WINDOW};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WinVisbilty {
@@ -24,6 +25,8 @@ pub enum Request {
     ChangeVisiblity(Vec<WinVisbilty>),
     ChangeZIndex(Vec<WinZIndex>),
     ListNewWindows,
+    ListVisibleWindows,
+    ListHiddenWindows,
     RestackWindows,
 }
 
@@ -32,6 +35,8 @@ pub enum Response {
     VisibiltyChanged(Vec<WINDOW>),
     ZIndexChanged(Vec<WINDOW>),
     NewWindows(Vec<WINDOW>),
+    VisibleWindows(Vec<WinZIndex>),
+    HiddenWindows(Vec<WinZIndex>),
     RestackComplete,
 }
 
@@ -46,7 +51,7 @@ enum Message {
     Response(Response),
 }
 
-pub fn create_cli(tx_req: Sender<Request>) -> Sender<Response> {
+pub fn create_cli(waker: Waker, tx_req: Sender<Request>) -> Result<Sender<Response>, Error> {
     let (tx_resp, rx_resp) = channel::<Response>();
 
     thread::spawn(move || {
@@ -55,10 +60,16 @@ pub fn create_cli(tx_req: Sender<Request>) -> Sender<Response> {
         while io::stdin().read_line(&mut line).is_ok() {
             if let Ok(req) = de::from_str::<Request>(&line) {
                 if tx_req.send(req).is_ok() {
-                    if let Ok(resp) = rx_resp.recv() {
-                        if let Ok(resp) = ser::to_string(&Message::Response(resp)) {
-                            println!("{}", resp);
+                    // wake up wm thread, notifying it of pending input
+                    let res = waker.wake();
+                    if res.is_ok() {
+                        if let Ok(resp) = rx_resp.recv() {
+                            if let Ok(resp) = ser::to_string(&Message::Response(resp)) {
+                                println!("{}", resp);
+                            }
                         }
+                    } else {
+                        eprintln!("{}", res.err().unwrap());
                     }
                 }
             } else {
@@ -70,5 +81,5 @@ pub fn create_cli(tx_req: Sender<Request>) -> Sender<Response> {
         }
     });
 
-    tx_resp
+    Ok(tx_resp)
 }

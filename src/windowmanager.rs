@@ -1,11 +1,14 @@
+use std::cmp;
 use std::collections::HashMap;
-
+use std::process::exit;
 use std::time::Instant;
 
-use std::process::exit;
+use std::sync::Arc;
 
 use x11rb::connection::Connection;
 use x11rb::generated::xproto::*;
+use x11rb::wrapper::LazyAtom;
+use x11rb::x11_utils::TryParse;
 use x11rb::x11_utils::{Event, GenericEvent};
 use x11rb::xcb_ffi::XCBConnection;
 
@@ -13,20 +16,28 @@ pub use x11rb::generated::xproto::WINDOW;
 
 use crate::error::*;
 
+const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
+
 #[derive(Clone, Debug)]
 struct WinInfo {
     id: WINDOW,
     index: u32,
 
-    // the time the window as mapped/discovered
+    // the time the window was mapped/discovered
     discovery_time: Instant,
 
     // last time window zindex or visibilty was updated
     last_update_time: Instant,
 }
 
+pub struct Waker {
+    conn: Arc<XCBConnection>,
+    win: WINDOW,
+    event: ClientMessageEvent,
+}
+
 pub struct WindowManager {
-    conn: XCBConnection,
+    conn: Arc<XCBConnection>,
     screen_num: usize,
 
     // windows that are currently in the visible stack
@@ -37,18 +48,39 @@ pub struct WindowManager {
 
     // the last time new windows were queried
     last_discovery_time: Instant,
+
+    // pending input atom
+    pending_input_atom: ATOM,
+}
+
+impl Waker {
+    // wake up wm thread, notifying it of pending input
+    pub fn wake(&self) -> Result<(), Error> {
+        self.conn.send_event(
+            false,
+            self.win,
+            EventMask::SubstructureNotify.into(),
+            &self.event,
+        )?;
+        self.conn.flush();
+        Ok(())
+    }
 }
 
 impl WindowManager {
     pub fn new() -> Result<Self, Error> {
         let (conn, screen_num) = XCBConnection::connect(None)?;
 
+        let pending_input_atom =
+            LazyAtom::new(&conn, false, PENDING_INPUT_ATOM_NAME.as_bytes()).atom()?;
+
         let mut wm = WindowManager {
-            conn: conn,
+            conn: Arc::new(conn),
             screen_num: screen_num,
             visible_wins: HashMap::new(),
             hidden_wins: HashMap::new(),
             last_discovery_time: Instant::now(),
+            pending_input_atom: pending_input_atom,
         };
 
         wm.become_wm()?;
@@ -58,11 +90,38 @@ impl WindowManager {
     }
 
     pub fn process_events(&mut self) -> Result<(), Error> {
-        if let Ok(Some(event)) = self.conn.poll_for_event() {
-            self.handle_event(event)
-        } else {
-            Ok(())
+        while let Ok(event) = self.conn.wait_for_event() {
+            if !self.handle_event(event)? {
+                break;
+            }
         }
+        Ok(())
+    }
+
+    pub fn create_waker(&self) -> Result<Waker, Error> {
+        let atom = self.pending_input_atom;
+
+        let mut data = [0; 20];
+        data[..4].copy_from_slice(&atom.to_ne_bytes());
+
+        let (data, _): (ClientMessageData, _) = TryParse::try_parse(&data)?;
+
+        let win = self.screen_ref().root;
+
+        let event = ClientMessageEvent {
+            response_type: CLIENT_MESSAGE_EVENT,
+            format: 32,
+            sequence: 0,
+            window: win,
+            type_: atom,
+            data,
+        };
+
+        Ok(Waker {
+            conn: self.conn.clone(),
+            win,
+            event,
+        })
     }
 
     pub fn change_indices<'a, I>(&mut self, iter: I) -> Vec<WINDOW>
@@ -148,7 +207,8 @@ impl WindowManager {
         Ok(())
     }
 
-    // check new wins are remove them from new window queue
+    // check for newly discovered/mapped windows, sorted by recency,
+    // with most recent windows frist
     pub fn check_new(&mut self) -> Vec<WINDOW> {
         let mut new_wins = Vec::new();
         // new windows only go into hidden_wins
@@ -157,8 +217,27 @@ impl WindowManager {
                 new_wins.push(wininfo.id);
             }
         }
+        new_wins.sort_by_cached_key(|w| {
+            cmp::Reverse(
+                self.hidden_wins
+                    .get(w)
+                    .and_then(|w| Some(w.index))
+                    .unwrap_or(0),
+            )
+        });
         self.last_discovery_time = Instant::now();
         new_wins
+    }
+
+    pub fn get_visible_wins(&self) -> Vec<(WINDOW, u32)> {
+        self.visible_wins
+            .values()
+            .map(|v| (v.id, v.index))
+            .collect()
+    }
+
+    pub fn get_hidden_wins(&self) -> Vec<(WINDOW, u32)> {
+        self.hidden_wins.values().map(|v| (v.id, v.index)).collect()
     }
 
     fn screen_ref(&self) -> &Screen {
@@ -290,15 +369,31 @@ impl WindowManager {
         Ok(())
     }
 
-    fn handle_event(&mut self, event: GenericEvent) -> Result<(), Error> {
+    fn handle_event(&mut self, event: GenericEvent) -> Result<bool, Error> {
         // eprintln!("Got event {:?}", event);
 
         match event.response_type() {
-            UNMAP_NOTIFY_EVENT => self.handle_unmap_notify(event.into()),
-            CONFIGURE_REQUEST_EVENT => self.handle_configure_request(event.into()),
-            MAP_REQUEST_EVENT => self.handle_map_request(event.into()),
-            ENTER_NOTIFY_EVENT => self.handle_enter(event.into()),
-            _ => Ok(()),
+            UNMAP_NOTIFY_EVENT => {
+                self.handle_unmap_notify(event.into())?;
+            }
+            CONFIGURE_REQUEST_EVENT => {
+                self.handle_configure_request(event.into())?;
+            }
+            MAP_REQUEST_EVENT => {
+                self.handle_map_request(event.into())?;
+            }
+            ENTER_NOTIFY_EVENT => {
+                self.handle_enter(event.into())?;
+            }
+            CLIENT_MESSAGE_EVENT => {
+                let msg_event: ClientMessageEvent = event.into();
+                if msg_event.type_ == self.pending_input_atom {
+                    return Ok(false);
+                }
+            }
+            _ => (),
         }
+
+        Ok(true)
     }
 }

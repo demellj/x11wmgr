@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::io::Error as IOError;
 use x11rb::errors::ConnectionError;
 use x11rb::errors::ConnectionErrorOrX11Error;
+use x11rb::errors::ParseError;
 use x11rb::x11_utils::GenericError;
 
 #[derive(Debug, Fail)]
@@ -20,6 +21,9 @@ pub enum ErrorKind {
 
     #[fail(display = "An IO error occurred")]
     IOError(#[cause] IOError),
+
+    #[fail(display = "An internal error occurred")]
+    ParseError(#[cause] ParseError),
 }
 
 #[derive(Debug, Clone)]
@@ -63,6 +67,14 @@ impl From<ConnectionError> for Error {
     fn from(error: ConnectionError) -> Self {
         Error {
             ctx: Arc::new(Context::new(ErrorKind::XCBError(error))),
+        }
+    }
+}
+
+impl From<ParseError> for Error {
+    fn from(error: ParseError) -> Self {
+        Error {
+            ctx: Arc::new(Context::new(ErrorKind::ParseError(error))),
         }
     }
 }

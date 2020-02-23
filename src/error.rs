@@ -33,70 +33,56 @@ pub enum ErrorKind {
 }
 
 #[derive(Debug, Clone)]
-pub struct Error {
-    ctx: Arc<Context<ErrorKind>>,
-}
+pub struct Error(Arc<Context<ErrorKind>>);
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> DisplayResult {
-        write!(f, "{}", self.ctx.get_context())
+        write!(f, "{}", self.0.get_context())
     }
 }
 
 impl Fail for Error {
     fn cause(&self) -> Option<&dyn Fail> {
-        self.ctx.cause()
+        self.0.cause()
     }
 
     fn backtrace(&self) -> Option<&Backtrace> {
-        self.ctx.backtrace()
+        self.0.backtrace()
     }
 }
 
 impl From<IOError> for Error {
     fn from(error: IOError) -> Self {
-        Error {
-            ctx: Arc::new(Context::new(ErrorKind::IOError(error))),
-        }
+        Error(Arc::new(Context::new(ErrorKind::IOError(error))))
     }
 }
 
 impl From<ConnectionErrorOrX11Error> for Error {
     fn from(error: ConnectionErrorOrX11Error) -> Self {
-        Error {
-            ctx: Arc::new(Context::new(ErrorKind::X11Error(error))),
-        }
+        Error(Arc::new(Context::new(ErrorKind::X11Error(error))))
     }
 }
 
 impl From<ConnectionError> for Error {
     fn from(error: ConnectionError) -> Self {
-        Error {
-            ctx: Arc::new(Context::new(ErrorKind::XCBError(error))),
-        }
+        Error(Arc::new(Context::new(ErrorKind::XCBError(error))))
     }
 }
 
 impl From<ParseError> for Error {
     fn from(error: ParseError) -> Self {
-        Error {
-            ctx: Arc::new(Context::new(ErrorKind::ParseError(error))),
-        }
+        Error(Arc::new(Context::new(ErrorKind::ParseError(error))))
     }
 }
 
 impl From<GenericError> for Error {
     fn from(error: GenericError) -> Self {
-        Error {
-            ctx: Arc::new(Context::new(ErrorKind::GenericX11Error(error))),
-        }
+        Error(Arc::new(Context::new(ErrorKind::GenericX11Error(error))))
     }
 }
 
 impl From<SendError<Response>> for Error {
     fn from(error: SendError<Response>) -> Self {
-        Error {
-            ctx: Arc::new(Context::new(ErrorKind::SendError(error))),
-        }
+        Error(Arc::new(Context::new(ErrorKind::SendError(error))))
     }
 }

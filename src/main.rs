@@ -1,5 +1,7 @@
 use std::sync::mpsc::channel;
 
+use std::process::exit;
+
 use x11wmgr::*;
 
 fn main() {
@@ -10,6 +12,8 @@ fn main() {
         } else {
             eprintln!("{}: {}", name, err);
         }
+
+        exit(1);
     }
 }
 

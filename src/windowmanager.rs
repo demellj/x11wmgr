@@ -12,6 +12,7 @@ use x11rb::x11_utils::{Event, GenericEvent};
 use x11rb::xcb_ffi::XCBConnection;
 
 pub use x11rb::generated::xproto::WINDOW;
+pub type ZIndexType = u32;
 
 use crate::error::*;
 
@@ -20,7 +21,7 @@ const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
 #[derive(Clone, Debug)]
 struct WinInfo {
     id: WINDOW,
-    index: u32,
+    index: ZIndexType,
 
     // the time the window was mapped/discovered
     discovery_time: Instant,
@@ -129,7 +130,7 @@ impl WindowManager {
 
     pub fn change_indices<'a, I>(&mut self, iter: I) -> Vec<WINDOW>
     where
-        I: Iterator<Item = (WINDOW, u32)>,
+        I: Iterator<Item = (WINDOW, ZIndexType)>,
     {
         let mut changed_wins = Vec::new();
 
@@ -248,14 +249,14 @@ impl WindowManager {
         new_wins
     }
 
-    pub fn get_visible_wins(&self) -> Vec<(WINDOW, u32)> {
+    pub fn get_visible_wins(&self) -> Vec<(WINDOW, ZIndexType)> {
         self.visible_wins
             .values()
             .map(|v| (v.id, v.index))
             .collect()
     }
 
-    pub fn get_hidden_wins(&self) -> Vec<(WINDOW, u32)> {
+    pub fn get_hidden_wins(&self) -> Vec<(WINDOW, ZIndexType)> {
         self.hidden_wins.values().map(|v| (v.id, v.index)).collect()
     }
 

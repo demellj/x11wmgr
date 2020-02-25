@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{de, ser};
 
 use crate::error::*;
-use crate::windowmanager::{Waker, WINDOW, ZIndexType};
+use crate::windowmanager::{Waker, ZIndexType, WINDOW};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WinVisbilty {

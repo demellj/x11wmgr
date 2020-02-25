@@ -28,6 +28,7 @@ pub enum Request {
     ListVisibleWindows,
     ListHiddenWindows,
     RestackWindows,
+    FocusWindow(WINDOW),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -38,6 +39,7 @@ pub enum Response {
     VisibleWindows(Vec<WinZIndex>),
     HiddenWindows(Vec<WinZIndex>),
     RestackComplete,
+    WindowFocused(bool),
 }
 
 #[derive(Serialize, Deserialize, Debug)]

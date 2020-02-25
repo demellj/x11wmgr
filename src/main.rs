@@ -75,6 +75,10 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
             wm.restack_windows()?;
             Response::RestackComplete
         }
+        Request::FocusWindow(id) => {
+            let is_focused = wm.focus_window(id)?;
+            Response::WindowFocused(is_focused)
+        }
     };
 
     Ok(resp)

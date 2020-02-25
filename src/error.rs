@@ -4,10 +4,10 @@ use std::sync::Arc;
 
 use std::io::Error as IOError;
 use std::sync::mpsc::SendError;
-use x11rb::generated::xproto::ACCESS_ERROR;
 use x11rb::errors::ConnectionError;
 use x11rb::errors::ConnectionErrorOrX11Error;
 use x11rb::errors::ParseError;
+use x11rb::generated::xproto::ACCESS_ERROR;
 use x11rb::x11_utils::GenericError;
 
 use crate::cli::Response;
@@ -47,9 +47,7 @@ impl Display for Error {
                     write!(f, "{}", ctx)
                 }
             }
-            _ => {
-                write!(f, "{}", ctx)
-            }
+            _ => write!(f, "{}", ctx),
         }
     }
 }

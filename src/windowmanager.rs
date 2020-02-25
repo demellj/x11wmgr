@@ -177,7 +177,23 @@ impl WindowManager {
         changed_wins
     }
 
-    // restack windows
+    // synchronous
+    pub fn focus_window(&self, id: WINDOW) -> Result<bool, Error> {
+        if self.visible_wins.contains_key(&id) {
+            let cookie =
+                self.conn
+                    .set_input_focus(InputFocus::Parent, id, Time::CurrentTime.into())?;
+            if let Some(err) = cookie.check()? {
+                Err(err.into())
+            } else {
+                Ok(true)
+            }
+        } else {
+            Ok(false)
+        }
+    }
+
+    // restack windows (synchronous)
     pub fn restack_windows(&self) -> Result<(), Error> {
         let mut aux = ConfigureWindowAux::default();
 
@@ -355,19 +371,6 @@ impl WindowManager {
         Ok(())
     }
 
-    // focus follows mouse
-    fn handle_enter(&self, event: EnterNotifyEvent) -> Result<(), Error> {
-        let window = if let Some(_) = self.visible_wins.get(&event.child) {
-            event.child
-        } else {
-            event.event
-        };
-
-        self.conn.set_input_focus(InputFocus::Parent, window, 0)?;
-        eprintln!("Window {:#x} got focused", event.child);
-        Ok(())
-    }
-
     fn handle_event(&mut self, event: GenericEvent) -> Result<bool, Error> {
         // eprintln!("Got event {:?}", event);
 
@@ -380,9 +383,6 @@ impl WindowManager {
             }
             MAP_REQUEST_EVENT => {
                 self.handle_map_request(event.into())?;
-            }
-            ENTER_NOTIFY_EVENT => {
-                self.handle_enter(event.into())?;
             }
             CLIENT_MESSAGE_EVENT => {
                 let msg_event: ClientMessageEvent = event.into();

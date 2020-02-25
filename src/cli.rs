@@ -48,9 +48,9 @@ enum ErrorType {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-enum Message {
+enum ResponseEnvelope {
     Error(ErrorType),
-    Response(Response),
+    Result(Response),
 }
 
 pub fn create_cli(waker: Waker, tx_req: Sender<Request>) -> Result<Sender<Response>, Error> {
@@ -66,7 +66,7 @@ pub fn create_cli(waker: Waker, tx_req: Sender<Request>) -> Result<Sender<Respon
                     let res = waker.wake();
                     if res.is_ok() {
                         if let Ok(resp) = rx_resp.recv() {
-                            if let Ok(resp) = ser::to_string(&Message::Response(resp)) {
+                            if let Ok(resp) = ser::to_string(&ResponseEnvelope::Result(resp)) {
                                 println!("{}", resp);
                             }
                         }
@@ -76,7 +76,7 @@ pub fn create_cli(waker: Waker, tx_req: Sender<Request>) -> Result<Sender<Respon
                 }
             } else {
                 let msg = line.trim().to_owned();
-                let resp = Message::Error(ErrorType::InvalidInput(msg));
+                let resp = ResponseEnvelope::Error(ErrorType::InvalidInput(msg));
                 println!("{}", ser::to_string(&resp).unwrap());
             }
             line.clear();

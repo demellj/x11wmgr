@@ -37,7 +37,7 @@ fn run() -> Result<(), Error> {
 
 fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Error> {
     let resp = match req {
-        Request::ChangeVisiblity(win_vis) => {
+        Request::ChangeVisibility(win_vis) => {
             let result = wm.change_visiblity(win_vis.into_iter().map(|v| (v.id, v.visible)));
             Response::VisibiltyChanged(result)
         }
@@ -53,10 +53,7 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
             let wins = wm
                 .get_visible_wins()
                 .into_iter()
-                .map(|(id, indx)| WinZIndex {
-                    id: id,
-                    zindex: indx,
-                })
+                .map(|(id, zindex)| WinZIndex { id, zindex })
                 .collect();
             Response::VisibleWindows(wins)
         }
@@ -64,10 +61,7 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
             let wins = wm
                 .get_hidden_wins()
                 .into_iter()
-                .map(|(id, indx)| WinZIndex {
-                    id: id,
-                    zindex: indx,
-                })
+                .map(|(id, zindex)| WinZIndex { id, zindex })
                 .collect();
             Response::HiddenWindows(wins)
         }

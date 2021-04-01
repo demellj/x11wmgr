@@ -6,36 +6,36 @@ use serde::{Deserialize, Serialize};
 use serde_json::{de, ser};
 
 use crate::error::*;
-use crate::windowmanager::{Waker, ZIndexType, WINDOW};
+use crate::windowmanager::{Waker, ZIndexType, Window};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WinVisbilty {
-    pub id: WINDOW,
+    pub id: Window,
     pub visible: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WinZIndex {
-    pub id: WINDOW,
+    pub id: Window,
     pub zindex: ZIndexType,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Request {
-    ChangeVisiblity(Vec<WinVisbilty>),
+    ChangeVisibility(Vec<WinVisbilty>),
     ChangeZIndex(Vec<WinZIndex>),
     ListNewWindows,
     ListVisibleWindows,
     ListHiddenWindows,
     RestackWindows,
-    FocusWindow(WINDOW),
+    FocusWindow(Window),
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Response {
-    VisibiltyChanged(Vec<WINDOW>),
-    ZIndexChanged(Vec<WINDOW>),
-    NewWindows(Vec<WINDOW>),
+    VisibiltyChanged(Vec<Window>),
+    ZIndexChanged(Vec<Window>),
+    NewWindows(Vec<Window>),
     VisibleWindows(Vec<WinZIndex>),
     HiddenWindows(Vec<WinZIndex>),
     RestackComplete,

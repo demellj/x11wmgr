@@ -43,7 +43,7 @@ The following are the supported commands along with example input:
 
    ```json
    {"ChangeZIndex": [
-   	{"id":123124, "zindex":2},
+       {"id":123124, "zindex":2},
        {"id":123125, "zindex":3}
    ]}
    ```

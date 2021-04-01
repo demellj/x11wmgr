@@ -6,7 +6,7 @@ This window manager is designed around two lists of *mapped* windows: *visible* 
 
 The following are the supported commands along with example input:
 
-1. **ListNewWindows** - returns a list of all new windows that were mapped since the last invocation of this very same command.
+1. **ListNewWindows** - returns a list of all new windows that were mapped since the last invocation of this very same command. New windows are automatically added to the hidden list.
 
    ```json
    "ListNewWindows"

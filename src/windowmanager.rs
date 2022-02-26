@@ -7,8 +7,8 @@ use std::sync::Arc;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
 use x11rb::protocol::Event;
-use x11rb::x11_utils::TryParse;
 use x11rb::rust_connection::RustConnection;
+use x11rb::x11_utils::TryParse;
 
 pub use x11rb::protocol::xproto::Window;
 
@@ -56,12 +56,9 @@ pub struct WindowManager {
 impl Waker {
     // wake up wm thread, notifying it of pending input
     pub fn wake(&self) -> Result<(), Error> {
-        let cookie = self.conn.send_event(
-            false,
-            self.win,
-            EventMask::SUBSTRUCTURE_NOTIFY,
-            &self.event,
-        )?;
+        let cookie =
+            self.conn
+                .send_event(false, self.win, EventMask::SUBSTRUCTURE_NOTIFY, &self.event)?;
 
         cookie.check()?;
 
@@ -73,8 +70,9 @@ impl WindowManager {
     pub fn new() -> Result<Self, Error> {
         let (conn, screen_num) = RustConnection::connect(None)?;
 
-        let pending_input_atom =
-            intern_atom(&conn, false, PENDING_INPUT_ATOM_NAME.as_bytes())?.reply()?.atom;
+        let pending_input_atom = intern_atom(&conn, false, PENDING_INPUT_ATOM_NAME.as_bytes())?
+            .reply()?
+            .atom;
 
         let mut wm = WindowManager {
             conn: Arc::new(conn),
@@ -126,7 +124,7 @@ impl WindowManager {
         })
     }
 
-    pub fn change_indices<'a, I>(&mut self, iter: I) -> Vec<Window>
+    pub fn change_indices<I>(&mut self, iter: I) -> Vec<Window>
     where
         I: Iterator<Item = (Window, ZIndexType)>,
     {
@@ -151,7 +149,7 @@ impl WindowManager {
         changed_wins
     }
 
-    pub fn change_visiblity<'a, I>(&mut self, iter: I) -> Vec<Window>
+    pub fn change_visiblity<I>(&mut self, iter: I) -> Vec<Window>
     where
         I: Iterator<Item = (Window, bool)>,
     {
@@ -179,7 +177,9 @@ impl WindowManager {
     // synchronous
     pub fn focus_window(&self, id: Window) -> Result<bool, Error> {
         if self.visible_wins.contains_key(&id) {
-            let cookie = self.conn.set_input_focus(InputFocus::PARENT, id, Time::CURRENT_TIME)?;
+            let cookie = self
+                .conn
+                .set_input_focus(InputFocus::PARENT, id, Time::CURRENT_TIME)?;
 
             cookie.check()?;
 
@@ -244,15 +244,12 @@ impl WindowManager {
         new_wins
     }
 
-    pub fn get_visible_wins(&self) -> Vec<(Window, ZIndexType)> {
-        self.visible_wins
-            .values()
-            .map(|v| (v.id, v.index))
-            .collect()
+    pub fn get_visible_wins(&self) -> impl Iterator<Item = (Window, ZIndexType)> + '_ {
+        self.visible_wins.values().map(|v| (v.id, v.index))
     }
 
-    pub fn get_hidden_wins(&self) -> Vec<(Window, ZIndexType)> {
-        self.hidden_wins.values().map(|v| (v.id, v.index)).collect()
+    pub fn get_hidden_wins(&self) -> impl Iterator<Item = (Window, ZIndexType)> + '_ {
+        self.hidden_wins.values().map(|v| (v.id, v.index))
     }
 
     fn screen_ref(&self) -> &Screen {
@@ -261,8 +258,8 @@ impl WindowManager {
 
     fn become_wm(&self) -> Result<(), Error> {
         let mask = EventMask::SUBSTRUCTURE_REDIRECT
-                 | EventMask::SUBSTRUCTURE_NOTIFY
-                 | EventMask::ENTER_WINDOW;
+            | EventMask::SUBSTRUCTURE_NOTIFY
+            | EventMask::ENTER_WINDOW;
 
         let change = ChangeWindowAttributesAux::default().event_mask(mask);
 

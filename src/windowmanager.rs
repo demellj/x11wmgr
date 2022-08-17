@@ -9,6 +9,7 @@ use x11rb::protocol::xproto::*;
 use x11rb::protocol::Event;
 use x11rb::rust_connection::RustConnection;
 use x11rb::x11_utils::TryParse;
+use x11rb::COPY_DEPTH_FROM_PARENT;
 
 pub use x11rb::protocol::xproto::Window;
 
@@ -39,6 +40,9 @@ pub struct Waker {
 pub struct WindowManager {
     conn: Arc<RustConnection>,
     screen_num: usize,
+
+    // window that spans the entire screen and has a black background.
+    virtual_root_win: Window,
 
     // windows that are currently in the visible stack
     visible_wins: HashMap<Window, WinInfo>,
@@ -74,9 +78,31 @@ impl WindowManager {
             .reply()?
             .atom;
 
+        let screen = &conn.setup().roots[screen_num];
+
+        let wid = conn.generate_id()?;
+
+        conn.create_window(
+            COPY_DEPTH_FROM_PARENT,
+            wid,
+            screen.root,
+            0,
+            0,
+            screen.width_in_pixels,
+            screen.height_in_pixels,
+            0,
+            WindowClass::INPUT_OUTPUT,
+            0,
+            &CreateWindowAux::new().background_pixel(screen.black_pixel),
+        )?;
+
+        conn.map_window(wid)?;
+        conn.flush()?;
+
         let mut wm = WindowManager {
             conn: Arc::new(conn),
             screen_num,
+            virtual_root_win: wid,
             visible_wins: HashMap::new(),
             hidden_wins: HashMap::new(),
             last_discovery_time: Instant::now(),
@@ -200,20 +226,15 @@ impl WindowManager {
         // push all hidden to bottom
         aux = aux.stack_mode(StackMode::BELOW);
         for wininfo in self.hidden_wins.values() {
-            eprintln!(
-                "hidden window {:#x} has been restacked {:?}",
-                wininfo.id, aux
-            );
             self.conn.configure_window(wininfo.id, &aux)?;
         }
 
-        // stack sorted visible windows
+        // push virtual root window
         aux = aux.stack_mode(StackMode::ABOVE);
+        self.conn.configure_window(self.virtual_root_win, &aux)?;
+
+        // stack sorted visible windows above it
         for wininfo in sorted_visible {
-            eprintln!(
-                "visible window {:#x} has been restacked {:?}",
-                wininfo.id, aux
-            );
             self.conn.configure_window(wininfo.id, &aux)?;
         }
 
@@ -290,9 +311,11 @@ impl WindowManager {
 
         let wins = &mut self.hidden_wins;
 
+        let vroot_win = self.virtual_root_win;
+
         for (win, attr) in resp {
-            // ignore unmapped windows, or windows with override-redirect set
-            if !attr.override_redirect && attr.map_state != MapState::UNMAPPED {
+            // ignore virtual_root_win or unmapped windows or windows with override-redirect set
+            if win != vroot_win && !attr.override_redirect && attr.map_state != MapState::UNMAPPED {
                 wins.entry(win).or_insert(WinInfo {
                     id: win,
                     index: 0,

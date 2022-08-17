@@ -1,4 +1,5 @@
 use failure::{Backtrace, Context, Fail};
+use x11rb::rust_connection::ReplyOrIdError;
 use std::fmt::{Display, Formatter, Result as DisplayResult};
 use std::sync::Arc;
 
@@ -20,6 +21,9 @@ pub enum ErrorKind {
 
     #[fail(display = "Connection terminated")]
     ConnectionError(#[cause] ConnectionError),
+
+    #[fail(display = "Resource exhausted: {}", _0)]
+    ResourceExhausted(&'static str),
 
     #[fail(display = "An X11 error occurred")]
     X11Error(X11Error),
@@ -76,6 +80,22 @@ impl From<ReplyError> for Error {
                 Error(Arc::new(Context::new(ErrorKind::X11Error(err))))
             }
             ReplyError::ConnectionError(err) => {
+                Error(Arc::new(Context::new(ErrorKind::ConnectionError(err))))
+            }
+        }
+    }
+}
+
+impl From<ReplyOrIdError> for Error {
+    fn from(error: ReplyOrIdError) -> Self {
+        match error {
+            ReplyOrIdError::IdsExhausted => {
+                Error(Arc::new(Context::new(ErrorKind::ResourceExhausted("XID"))))
+            }
+            ReplyOrIdError::X11Error(err) => {
+                Error(Arc::new(Context::new(ErrorKind::X11Error(err))))
+            }
+            ReplyOrIdError::ConnectionError(err) => {
                 Error(Arc::new(Context::new(ErrorKind::ConnectionError(err))))
             }
         }

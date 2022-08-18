@@ -2,7 +2,7 @@
 
 This window manager delegates all control over to stdin. You communicate with it using JSON messages. It only supports a very limited set of commands, but the code should be easy to hack to add new functionality. 
 
-This window manager is designed around two lists of *mapped* windows: *visible* and *hidden*. Windows are never mapped or unmapped, but simply moved between these two lists. When the windows are restacked,  the hidden windows are covered by a large window spanning the whole screen having a black background. The visible windows lay above it according to their z-index.
+This window manager is designed around two lists of *mapped* windows: *visible* and *hidden*. Windows are never unmapped, but simply moved between these two lists. When the windows are restacked, the hidden windows are covered by a large window spanning the whole screen having a black background. The visible windows stacked above it according to their z-index.
 
 The following are the supported commands along with example input:
 

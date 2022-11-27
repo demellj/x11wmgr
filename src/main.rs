@@ -23,7 +23,7 @@ fn run() -> Result<(), Error> {
     let waker = wm.create_waker()?;
 
     let (tx_req, rx_req) = channel::<Request>();
-    let tx_resp = create_cli(waker, tx_req)?;
+    let tx_resp = create_cli(waker, tx_req);
 
     loop {
         wm.process_events()?;

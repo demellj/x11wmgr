@@ -246,14 +246,15 @@ impl WindowManager {
     // check for newly discovered/mapped windows, sorted by recency,
     // with most recent windows frist
     pub fn check_new(&mut self) -> Vec<Window> {
-        let mut new_wins = Vec::new();
         // new windows only go into hidden_wins
-        for wininfo in self.hidden_wins.values() {
-            if wininfo.discovery_time >= self.last_discovery_time {
-                new_wins.push(wininfo.id);
-            }
-        }
-        new_wins.sort_by_cached_key(|w| {
+        let mut new_wins = self
+            .hidden_wins
+            .values()
+            .filter(|winfo| winfo.discovery_time >= self.last_discovery_time)
+            .map(|winfo| winfo.id)
+            .collect::<Vec<_>>();
+
+        new_wins.sort_unstable_by_key(|w| {
             cmp::Reverse(
                 self.hidden_wins
                     .get(w)
@@ -336,29 +337,29 @@ impl WindowManager {
         let w: u16 = ConfigWindow::WIDTH.into();
         let h: u16 = ConfigWindow::HEIGHT.into();
 
-        if event.value_mask & x != 0 {
+        let event_mask: u16 = event.value_mask.into();
+
+        if event_mask & x != 0 {
             aux = aux.x(i32::from(event.x));
         }
-        if event.value_mask & y != 0 {
+        if event_mask & y != 0 {
             aux = aux.y(i32::from(event.y));
         }
-        if event.value_mask & w != 0 {
+        if event_mask & w != 0 {
             aux = aux.width(u32::from(event.width));
         }
-        if event.value_mask & h != 0 {
+        if event_mask & h != 0 {
             aux = aux.height(u32::from(event.height));
         }
 
         aux = aux.stack_mode(StackMode::BELOW);
 
-        eprintln!("window {:#x} has been reconfigured {:?}", event.window, aux);
         self.conn.configure_window(event.window, &aux)?;
 
         Ok(())
     }
 
     fn handle_map_request(&mut self, event: MapRequestEvent) -> Result<(), Error> {
-        // let geom = self.conn.get_geometry(event.window)?.reply()?;
         let win = event.window;
 
         // track window
@@ -377,13 +378,10 @@ impl WindowManager {
     fn handle_unmap_notify(&mut self, event: UnmapNotifyEvent) -> Result<(), Error> {
         self.hidden_wins.remove(&event.window);
         self.visible_wins.remove(&event.window);
-        eprintln!("window {:#x} unmapped and removed", event.window);
         Ok(())
     }
 
     fn handle_event(&mut self, event: Event) -> Result<bool, Error> {
-        // eprintln!("Got event {:?}", event);
-
         match event {
             Event::UnmapNotify(une) => {
                 self.handle_unmap_notify(une)?;

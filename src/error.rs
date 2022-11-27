@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter, Result as DisplayResult};
 use std::sync::Arc;
 
 use std::io::Error as IOError;
-use std::sync::mpsc::SendError;
+use std::sync::mpsc::{SendError, RecvError};
 use x11rb::errors::ConnectionError;
 use x11rb::errors::ReplyError;
 use x11rb::errors::ParseError;
@@ -12,6 +12,7 @@ use x11rb::errors::ConnectError;
 use x11rb::protocol::xproto::ACCESS_ERROR;
 use x11rb::x11_utils::X11Error;
 
+use crate::Request;
 use crate::cli::Response;
 
 #[derive(Debug, Fail)]
@@ -35,7 +36,13 @@ pub enum ErrorKind {
     ParseError(#[cause] ParseError),
 
     #[fail(display = "An internal error occurred")]
-    SendError(#[cause] SendError<Response>),
+    SendResponseError(#[cause] SendError<Response>),
+
+    #[fail(display = "An internal error occurred")]
+    SendRequestError(#[cause] SendError<Request>),
+
+    #[fail(display = "An internal error occurred")]
+    RecvError(#[cause] RecvError),
 }
 
 #[derive(Debug, Clone)]
@@ -122,7 +129,19 @@ impl From<X11Error> for Error {
 
 impl From<SendError<Response>> for Error {
     fn from(error: SendError<Response>) -> Self {
-        Error(Arc::new(Context::new(ErrorKind::SendError(error))))
+        Error(Arc::new(Context::new(ErrorKind::SendResponseError(error))))
+    }
+}
+
+impl From<SendError<Request>> for Error {
+    fn from(error: SendError<Request>) -> Self {
+        Error(Arc::new(Context::new(ErrorKind::SendRequestError(error))))
+    }
+}
+
+impl From<RecvError> for Error {
+    fn from(error: RecvError) -> Self {
+        Error(Arc::new(Context::new(ErrorKind::RecvError(error))))
     }
 }
 

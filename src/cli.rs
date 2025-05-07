@@ -39,7 +39,7 @@ pub enum Request {
     ChangeVisibility(Vec<WinVisbilty>),
     ChangeZIndex(Vec<WinZIndex>),
     ListNewWindows,
-    ResizeWindow(Vec<WinResize>),
+    ResizeWindows(Vec<WinResize>),
     MoveWindows(Vec<WinMove>),
     ListVisibleWindows,
     ListHiddenWindows,

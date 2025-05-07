@@ -261,6 +261,31 @@ impl WindowManager {
         Ok(())
     }
 
+    // move and resize multiple windows (synchronous)
+    pub fn move_resize_windows<I>(&self, iter: I) -> Result<(), Error>
+    where
+        I: Iterator<Item = WinMoveResize>,
+    {
+        let mut requests = Vec::new();
+
+        for WinMoveResize { id, x, y, width, height } in iter {
+            let aux = ConfigureWindowAux::default()
+                .x(x)
+                .y(y)
+                .width(width)
+                .height(height);
+
+            requests.push((id, aux));
+        }
+
+        for (id, aux) in requests {
+            self.conn.configure_window(id, &aux)?;
+        }
+        self.conn.flush()?;
+
+        Ok(())
+    }
+
     // restack windows (synchronous)
     pub fn restack_windows(&self) -> Result<(), Error> {
         let mut aux = ConfigureWindowAux::default();

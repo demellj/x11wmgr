@@ -9,6 +9,13 @@ use crate::error::*;
 use crate::windowmanager::{Waker, Window, ZIndexType};
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct WinResize {
+    pub id: Window,
+    pub width: u32,
+    pub height: u32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct WinVisbilty {
     pub id: Window,
     pub visible: bool,
@@ -25,6 +32,7 @@ pub enum Request {
     ChangeVisibility(Vec<WinVisbilty>),
     ChangeZIndex(Vec<WinZIndex>),
     ListNewWindows,
+    ResizeWindow(Vec<WinResize>),
     ListVisibleWindows,
     ListHiddenWindows,
     RestackWindows,
@@ -39,6 +47,7 @@ pub enum Response {
     VisibleWindows(Vec<WinZIndex>),
     HiddenWindows(Vec<WinZIndex>),
     RestackComplete,
+    ResizeComplete,
     WindowFocused(bool),
 }
 

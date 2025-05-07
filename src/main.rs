@@ -72,12 +72,7 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
             Response::WindowFocused(is_focused)
         }
         Request::ResizeWindows(windows) => {
-            wm.resize_windows(windows.into_iter().map(|WinResize { id, width, height }| {
-                (
-                    id,
-                    ConfigureWindowAux::default().width(width).height(height),
-                )
-            }))?;
+            wm.resize_windows(windows.into_iter())?;
             Response::ResizeComplete
         }
         Request::MoveWindows(windows) => {

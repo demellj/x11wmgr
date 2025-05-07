@@ -16,6 +16,7 @@ pub use x11rb::protocol::xproto::Window;
 pub type ZIndexType = u32;
 
 use crate::error::*;
+use crate::{WinMove, WinMoveResize, WinResize};
 
 const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
 
@@ -223,9 +224,7 @@ impl WindowManager {
         let mut requests = Vec::new();
 
         for WinResize { id, width, height } in iter {
-            let aux = ConfigureWindowAux::default()
-                .width(width)
-                .height(height);
+            let aux = ConfigureWindowAux::default().width(width).height(height);
 
             requests.push((id, aux));
         }
@@ -246,9 +245,7 @@ impl WindowManager {
         let mut requests = Vec::new();
 
         for WinMove { id, x, y } in iter {
-            let aux = ConfigureWindowAux::default()
-                .x(x)
-                .y(y);
+            let aux = ConfigureWindowAux::default().x(x).y(y);
 
             requests.push((id, aux));
         }
@@ -268,7 +265,14 @@ impl WindowManager {
     {
         let mut requests = Vec::new();
 
-        for WinMoveResize { id, x, y, width, height } in iter {
+        for WinMoveResize {
+            id,
+            x,
+            y,
+            width,
+            height,
+        } in iter
+        {
             let aux = ConfigureWindowAux::default()
                 .x(x)
                 .y(y)

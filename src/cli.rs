@@ -65,7 +65,9 @@ pub enum Response {
     VisibleWindows(Vec<WinZIndex>),
     HiddenWindows(Vec<WinZIndex>),
     RestackComplete,
+    MoveComplete,
     ResizeComplete,
+    MoveResizeComplete,
     WindowFocused(bool),
 }
 

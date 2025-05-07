@@ -16,6 +16,13 @@ pub struct WinResize {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct WinMove {
+    pub id: Window,
+    pub x: i32,
+    pub y: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct WinVisbilty {
     pub id: Window,
     pub visible: bool,
@@ -33,6 +40,7 @@ pub enum Request {
     ChangeZIndex(Vec<WinZIndex>),
     ListNewWindows,
     ResizeWindow(Vec<WinResize>),
+    MoveWindows(Vec<WinMove>),
     ListVisibleWindows,
     ListHiddenWindows,
     RestackWindows,

@@ -238,6 +238,29 @@ impl WindowManager {
         Ok(())
     }
 
+    // move multiple windows (synchronous)
+    pub fn move_windows<I>(&self, iter: I) -> Result<(), Error>
+    where
+        I: Iterator<Item = WinMove>,
+    {
+        let mut requests = Vec::new();
+
+        for WinMove { id, x, y } in iter {
+            let aux = ConfigureWindowAux::default()
+                .x(x)
+                .y(y);
+
+            requests.push((id, aux));
+        }
+
+        for (id, aux) in requests {
+            self.conn.configure_window(id, &aux)?;
+        }
+        self.conn.flush()?;
+
+        Ok(())
+    }
+
     // restack windows (synchronous)
     pub fn restack_windows(&self) -> Result<(), Error> {
         let mut aux = ConfigureWindowAux::default();

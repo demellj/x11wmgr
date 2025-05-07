@@ -73,9 +73,16 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
         }
         Request::ResizeWindow(windows) => {
             wm.resize_windows(windows.into_iter().map(|WinResize { id, width, height }| {
-                (id, ConfigureWindowAux::default().width(width).height(height))
+                (
+                    id,
+                    ConfigureWindowAux::default().width(width).height(height),
+                )
             }))?;
             Response::ResizeComplete
+        }
+        Request::MoveWindows(windows) => {
+            wm.move_windows(windows.into_iter())?;
+            Response::MoveComplete
         }
     };
 

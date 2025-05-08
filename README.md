@@ -4,7 +4,7 @@ This window manager delegates all control over to stdin. You communicate with it
 
 This window manager is designed around two lists of *mapped* windows: *visible* and *hidden*. Windows are never unmapped, but simply moved between these two lists. When the windows are restacked, the hidden windows are covered by a large window spanning the whole screen having a black background. The visible windows stacked above it according to their z-index.
 
-The following are the supported commands along with example input. Newly added commands include resizing, moving, and move-resizing windows:
+The following are the supported commands along with example input:
 
 1. **ListNewWindows** - returns a list of all new windows that were mapped since the last invocation of this very same command. New windows are automatically added to the hidden list.
 
@@ -52,33 +52,6 @@ The following are the supported commands along with example input. Newly added c
 
    ```json
    "RestackWindows"
-   ```
-
-8. **ResizeWindows** - resize one or more windows by specifying their IDs and dimensions.
-
-   ```json
-   {"ResizeWindows": [
-       {"id":123124, "width":800, "height":600},
-       {"id":123125, "width":1024, "height":768}
-   ]}
-   ```
-
-9. **MoveWindows** - move one or more windows by specifying their IDs and new positions.
-
-   ```json
-   {"MoveWindows": [
-       {"id":123124, "x":100, "y":200},
-       {"id":123125, "x":300, "y":400}
-   ]}
-   ```
-
-10. **MoveResizeWindows** - move and resize one or more windows by specifying their IDs, positions, and dimensions.
-
-   ```json
-   {"MoveResizeWindows": [
-       {"id":123124, "x":100, "y":200, "width":800, "height":600},
-       {"id":123125, "x":300, "y":400, "width":1024, "height":768}
-   ]}
    ```
 
 Unmapped windows are automatically removed from the list they were in.

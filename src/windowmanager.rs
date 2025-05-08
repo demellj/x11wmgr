@@ -16,7 +16,7 @@ pub use x11rb::protocol::xproto::Window;
 pub type ZIndexType = u32;
 
 use crate::error::*;
-use crate::{WinMove, WinResize, NewWindow};
+use crate::{NewWindow, WinMove, WinResize};
 
 const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
 
@@ -78,6 +78,9 @@ impl Waker {
 }
 
 impl WindowManager {
+    /// Creates a new instance of the WindowManager.
+    /// Initializes the connection to the X11 server, sets up the virtual root window,
+    /// and prepares the manager to handle events.
     pub fn new() -> Result<Self, Error> {
         let (conn, screen_num) = RustConnection::connect(None)?;
 
@@ -124,6 +127,8 @@ impl WindowManager {
         Ok(wm)
     }
 
+    /// Processes incoming X11 events in a blocking manner.
+    /// This method will handle events such as window mapping, unmapping, and configuration requests.
     pub fn process_events(&mut self) -> Result<(), Error> {
         while let Ok(event) = self.conn.wait_for_event() {
             if !self.handle_event(event)? {
@@ -133,6 +138,8 @@ impl WindowManager {
         Ok(())
     }
 
+    /// Creates a Waker object that can be used to notify the WindowManager of pending input.
+    /// This is useful for waking up the event loop when new requests are available.
     pub fn create_waker(&self) -> Result<Waker, Error> {
         let atom = self.pending_input_atom;
 
@@ -159,6 +166,8 @@ impl WindowManager {
         })
     }
 
+    /// Updates the z-index of specified windows.
+    /// Returns a list of windows whose z-index was successfully updated.
     pub fn change_indices<I>(&mut self, iter: I) -> Vec<Window>
     where
         I: Iterator<Item = (Window, ZIndexType)>,
@@ -184,6 +193,9 @@ impl WindowManager {
         changed_wins
     }
 
+    /// Changes the visibility of specified windows.
+    /// Moves windows between the visible and hidden lists based on the provided visibility flag.
+    /// Returns a list of windows whose visibility was successfully updated.
     pub fn change_visiblity<I>(&mut self, iter: I) -> Vec<Window>
     where
         I: Iterator<Item = (Window, bool)>,
@@ -209,7 +221,8 @@ impl WindowManager {
         changed_wins
     }
 
-    // synchronous
+    /// Sets the input focus to the specified window.
+    /// Returns `true` if the window is in the visible list and the focus was successfully set.
     pub fn focus_window(&self, id: Window) -> Result<bool, Error> {
         if self.visible_wins.contains_key(&id) {
             let cookie = self
@@ -225,6 +238,8 @@ impl WindowManager {
     }
 
     // resize multiple windows (deferred)
+    /// Queues resize operations for the specified windows.
+    /// The changes will only take effect after the `commit` method is called.
     pub fn resize_windows<I>(&mut self, iter: I) -> Result<(), Error>
     where
         I: Iterator<Item = WinResize>,
@@ -236,6 +251,8 @@ impl WindowManager {
     }
 
     // move multiple windows (deferred)
+    /// Queues move operations for the specified windows.
+    /// The changes will only take effect after the `commit` method is called.
     pub fn move_windows<I>(&mut self, iter: I) -> Result<(), Error>
     where
         I: Iterator<Item = WinMove>,
@@ -247,6 +264,8 @@ impl WindowManager {
     }
 
     // commit changes (synchronous)
+    /// Applies all pending changes (e.g., moves, resizes, visibility, and z-index updates)
+    /// and performs the sorting and re-stacking of windows.
     pub fn commit(&mut self) -> Result<(), Error> {
         let mut aux = ConfigureWindowAux::default();
 
@@ -288,6 +307,8 @@ impl WindowManager {
 
     // check for newly discovered/mapped windows, sorted by recency,
     // with most recent windows frist
+    /// Checks for newly discovered or mapped windows since the last query.
+    /// Returns a list of new windows along with their positions and dimensions.
     pub fn check_new(&mut self) -> Vec<NewWindow> {
         // new windows only go into hidden_wins
         let mut new_wins = self
@@ -298,7 +319,13 @@ impl WindowManager {
                 let id = winfo.id;
                 let (x, y) = self.windows_loc.get(&id).cloned().unwrap_or((0, 0));
                 let (width, height) = self.windows_size.get(&id).cloned().unwrap_or((0, 0));
-                NewWindow { id, x, y, width, height }
+                NewWindow {
+                    id,
+                    x,
+                    y,
+                    width,
+                    height,
+                }
             })
             .collect::<Vec<_>>();
 
@@ -314,10 +341,12 @@ impl WindowManager {
         new_wins
     }
 
+    /// Returns an iterator over the visible windows and their z-indices.
     pub fn get_visible_wins(&self) -> impl Iterator<Item = (Window, ZIndexType)> + '_ {
         self.visible_wins.values().map(|v| (v.id, v.index))
     }
 
+    /// Returns an iterator over the hidden windows and their z-indices.
     pub fn get_hidden_wins(&self) -> impl Iterator<Item = (Window, ZIndexType)> + '_ {
         self.hidden_wins.values().map(|v| (v.id, v.index))
     }

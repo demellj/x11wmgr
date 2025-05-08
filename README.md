@@ -57,7 +57,7 @@ The following are the supported commands. Note that all commands that modify win
    ]}
    ```
 
-6. **ChangeZIndex** - changes the z-index or priority of windows. Higher valued z-indices are on top of lower valued z-indices, however this only has effect when the window is moved to the visible list. This command has no visual effect until the RestackWindows command is invoked.
+6. **ChangeZIndex** - changes the z-index or priority of windows. Higher valued z-indices are on top of lower valued z-indices, however this only has effect when the window is moved to the visible list. This command has no visual effect until the Commit command is invoked.
 
    ```json
    {"ChangeZIndex": [
@@ -73,4 +73,3 @@ The following are the supported commands. Note that all commands that modify win
    ```
 
 Unmapped windows are automatically removed from the list they were in. Remember to invoke the **Commit** command after issuing any of the following commands to see the changes take effect: **ChangeVisibility**, **ChangeZIndex**, **MoveWindows**, or **ResizeWindows**.
-

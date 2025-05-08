@@ -12,13 +12,13 @@ The following are the supported commands. Note that all commands that modify win
    "ListNewWindows"
    ```
 
-2. **ListVisibleWindows** - returns the list of window IDs in the visible list.
+2. **ListVisibleWindows** - returns a list of all visible windows. Each window in the response includes its ID, position (`x`, `y`), and dimensions (`width`, `height`).
 
    ```json
    "ListVisibleWindows"
    ```
 
-3. **ListHiddenWindows** - returns the list of window IDs in the hidden list.
+3. **ListHiddenWindows** - returns a list of all hidden windows. Each window in the response includes its ID, position (`x`, `y`), and dimensions (`width`, `height`).
 
    ```json
    "ListHiddenWindows"

@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-x11rb = { version = "*", features = [ "all-extensions" ] }
-serde = { version = "*", features = [ "derive" ] }
+x11rb = { version = "*", features = ["all-extensions"] }
+serde = { version = "*", features = ["derive"] }
 serde_json = "*"
-failure = "*"
+thiserror = "*"

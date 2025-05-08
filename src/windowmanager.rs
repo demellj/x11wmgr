@@ -276,6 +276,12 @@ impl WindowManager {
         // push all hidden to bottom
         aux = aux.stack_mode(StackMode::BELOW);
         for wininfo in self.hidden_wins.values() {
+            if let Some(&(x, y)) = self.windows_loc.get(&wininfo.id) {
+                aux = aux.x(x).y(y);
+            }
+            if let Some(&(w, h)) = self.windows_size.get(&wininfo.id) {
+                aux = aux.width(w).height(h);
+            }
             self.conn.configure_window(wininfo.id, &aux)?;
         }
 
@@ -285,19 +291,13 @@ impl WindowManager {
 
         // stack sorted visible windows above it
         for wininfo in sorted_visible {
+            if let Some(&(x, y)) = self.windows_loc.get(&wininfo.id) {
+                aux = aux.x(x).y(y);
+            }
+            if let Some(&(w, h)) = self.windows_size.get(&wininfo.id) {
+                aux = aux.width(w).height(h);
+            }
             self.conn.configure_window(wininfo.id, &aux)?;
-        }
-
-        // Apply pending move operations
-        for (id, (x, y)) in self.windows_loc.drain() {
-            let aux = ConfigureWindowAux::default().x(x).y(y);
-            self.conn.configure_window(id, &aux)?;
-        }
-
-        // Apply pending resize operations
-        for (id, (width, height)) in self.windows_size.drain() {
-            let aux = ConfigureWindowAux::default().width(width).height(height);
-            self.conn.configure_window(id, &aux)?;
         }
 
         self.conn.flush()?;

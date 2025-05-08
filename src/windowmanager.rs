@@ -40,6 +40,8 @@ pub struct Waker {
 
 pub struct WindowManager {
     conn: Arc<RustConnection>,
+    windows_loc: HashMap<Window, (i32, i32)>,
+    windows_size: HashMap<Window, (u32, u32)>,
     screen_num: usize,
 
     // window that spans the entire screen and has a black background.
@@ -101,6 +103,8 @@ impl WindowManager {
         conn.flush()?;
 
         let mut wm = WindowManager {
+            windows_loc: HashMap::new(),
+            windows_size: HashMap::new(),
             conn: Arc::new(conn),
             screen_num,
             virtual_root_win: wid,
@@ -216,52 +220,30 @@ impl WindowManager {
         }
     }
 
-    // resize multiple windows (synchronous)
-    pub fn resize_windows<I>(&self, iter: I) -> Result<(), Error>
+    // resize multiple windows (deferred)
+    pub fn resize_windows<I>(&mut self, iter: I) -> Result<(), Error>
     where
         I: Iterator<Item = WinResize>,
     {
-        let mut requests = Vec::new();
-
         for WinResize { id, width, height } in iter {
-            let aux = ConfigureWindowAux::default().width(width).height(height);
-
-            requests.push((id, aux));
+            self.windows_size.insert(id, (width, height));
         }
-
-        for (id, aux) in requests {
-            self.conn.configure_window(id, &aux)?;
-        }
-        self.conn.flush()?;
-
         Ok(())
     }
 
-    // move multiple windows (synchronous)
-    pub fn move_windows<I>(&self, iter: I) -> Result<(), Error>
+    // move multiple windows (deferred)
+    pub fn move_windows<I>(&mut self, iter: I) -> Result<(), Error>
     where
         I: Iterator<Item = WinMove>,
     {
-        let mut requests = Vec::new();
-
         for WinMove { id, x, y } in iter {
-            let aux = ConfigureWindowAux::default().x(x).y(y);
-
-            requests.push((id, aux));
+            self.windows_loc.insert(id, (x, y));
         }
-
-        for (id, aux) in requests {
-            self.conn.configure_window(id, &aux)?;
-        }
-        self.conn.flush()?;
-
         Ok(())
     }
 
-
-
     // restack windows (synchronous)
-    pub fn restack_windows(&self) -> Result<(), Error> {
+    pub fn restack_windows(&mut self) -> Result<(), Error> {
         let mut aux = ConfigureWindowAux::default();
 
         // sort visible by zindex
@@ -281,6 +263,18 @@ impl WindowManager {
         // stack sorted visible windows above it
         for wininfo in sorted_visible {
             self.conn.configure_window(wininfo.id, &aux)?;
+        }
+
+        // Apply pending move operations
+        for (id, (x, y)) in self.windows_loc.drain() {
+            let aux = ConfigureWindowAux::default().x(x).y(y);
+            self.conn.configure_window(id, &aux)?;
+        }
+
+        // Apply pending resize operations
+        for (id, (width, height)) in self.windows_size.drain() {
+            let aux = ConfigureWindowAux::default().width(width).height(height);
+            self.conn.configure_window(id, &aux)?;
         }
 
         self.conn.flush()?;
@@ -374,7 +368,7 @@ impl WindowManager {
         Ok(())
     }
 
-    fn handle_configure_request(&self, event: ConfigureRequestEvent) -> Result<(), Error> {
+    fn handle_configure_request(&mut self, event: ConfigureRequestEvent) -> Result<(), Error> {
         let mut aux = ConfigureWindowAux::default();
 
         let x: u16 = ConfigWindow::X.into();
@@ -398,6 +392,18 @@ impl WindowManager {
         }
 
         aux = aux.stack_mode(StackMode::BELOW);
+
+        if event_mask & x != 0 && event_mask & y != 0 {
+            self.windows_loc
+                .insert(event.window, (i32::from(event.x), i32::from(event.y)));
+        }
+
+        if event_mask & w != 0 && event_mask & h != 0 {
+            self.windows_size.insert(
+                event.window,
+                (u32::from(event.width), u32::from(event.height)),
+            );
+        }
 
         self.conn.configure_window(event.window, &aux)?;
 

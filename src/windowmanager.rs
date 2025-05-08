@@ -242,8 +242,8 @@ impl WindowManager {
         Ok(())
     }
 
-    // restack windows (synchronous)
-    pub fn restack_windows(&mut self) -> Result<(), Error> {
+    // commit changes (synchronous)
+    pub fn commit(&mut self) -> Result<(), Error> {
         let mut aux = ConfigureWindowAux::default();
 
         // sort visible by zindex

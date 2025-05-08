@@ -44,7 +44,7 @@ pub enum Request {
     MoveWindows(Vec<WinMove>),
     ListVisibleWindows,
     ListHiddenWindows,
-    RestackWindows,
+    Commit,
     FocusWindow(Window),
 }
 
@@ -55,7 +55,7 @@ pub enum Response {
     NewWindows(Vec<Window>),
     VisibleWindows(Vec<WinZIndex>),
     HiddenWindows(Vec<WinZIndex>),
-    RestackComplete,
+    CommitComplete,
     MoveComplete,
     ResizeComplete,
 

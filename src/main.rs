@@ -63,9 +63,9 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
                 .collect();
             Response::HiddenWindows(wins)
         }
-        Request::RestackWindows => {
-            wm.restack_windows()?;
-            Response::RestackComplete
+        Request::Commit => {
+            wm.commit()?;
+            Response::CommitComplete
         }
         Request::FocusWindow(id) => {
             let is_focused = wm.focus_window(id)?;

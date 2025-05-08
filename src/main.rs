@@ -79,10 +79,7 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
             wm.move_windows(windows.into_iter())?;
             Response::MoveComplete
         }
-        Request::MoveResizeWindows(windows) => {
-            wm.move_resize_windows(windows.into_iter())?;
-            Response::MoveResizeComplete
-        }
+
     };
 
     Ok(resp)

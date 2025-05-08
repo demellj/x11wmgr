@@ -48,7 +48,7 @@ pub enum Request {
     ChangeVisibility(Vec<WinVisbilty>),
     ChangeZIndex(Vec<WinZIndex>),
     ListNewWindows,
-    MoveResizeWindows(Vec<WinMoveResize>),
+
     ResizeWindows(Vec<WinResize>),
     MoveWindows(Vec<WinMove>),
     ListVisibleWindows,
@@ -67,7 +67,7 @@ pub enum Response {
     RestackComplete,
     MoveComplete,
     ResizeComplete,
-    MoveResizeComplete,
+
     WindowFocused(bool),
 }
 

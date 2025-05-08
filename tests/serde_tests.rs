@@ -1,5 +1,5 @@
 use serde_json;
-use x11wmgr::{WindowInfo, Request, Response, WinMove, WinResize, WinVisbilty, WinZIndex};
+use x11wmgr::{Request, Response, WinMove, WinResize, WinVisbilty, WinZIndex, WindowInfo};
 
 #[test]
 fn test_request_move_windows_serialization() {
@@ -71,14 +71,8 @@ fn test_request_change_visibility_serialization() {
 #[test]
 fn test_request_change_zindex_serialization() {
     let request = Request::ChangeZIndex(vec![
-        WinZIndex {
-            id: 1,
-            zindex: 10,
-        },
-        WinZIndex {
-            id: 2,
-            zindex: 20,
-        },
+        WinZIndex { id: 1, zindex: 10 },
+        WinZIndex { id: 2, zindex: 20 },
     ]);
 
     let serialized = serde_json::to_string(&request).unwrap();
@@ -134,6 +128,84 @@ fn test_response_new_windows_serialization() {
 
     let serialized = serde_json::to_string(&response).unwrap();
     let expected = r#"{"NewWindows":[{"id":1,"x":100,"y":200,"width":800,"height":600},{"id":2,"x":-50,"y":-75,"width":1024,"height":768}]}"#;
+    assert_eq!(serialized, expected);
+
+    let deserialized: Response = serde_json::from_str(&serialized).unwrap();
+    assert_eq!(deserialized, response);
+}
+
+#[test]
+fn test_response_visibility_changed_serialization() {
+    let response = Response::VisibiltyChanged(vec![1, 2, 3]);
+
+    let serialized = serde_json::to_string(&response).unwrap();
+    let expected = r#"{"VisibiltyChanged":[1,2,3]}"#;
+    assert_eq!(serialized, expected);
+
+    let deserialized: Response = serde_json::from_str(&serialized).unwrap();
+    assert_eq!(deserialized, response);
+}
+
+#[test]
+fn test_response_zindex_changed_serialization() {
+    let response = Response::ZIndexChanged(vec![1, 2, 3]);
+
+    let serialized = serde_json::to_string(&response).unwrap();
+    let expected = r#"{"ZIndexChanged":[1,2,3]}"#;
+    assert_eq!(serialized, expected);
+
+    let deserialized: Response = serde_json::from_str(&serialized).unwrap();
+    assert_eq!(deserialized, response);
+}
+
+#[test]
+fn test_response_visible_windows_serialization() {
+    let response = Response::VisibleWindows(vec![
+        WindowInfo {
+            id: 1,
+            x: 100,
+            y: 200,
+            width: 800,
+            height: 600,
+        },
+        WindowInfo {
+            id: 2,
+            x: -50,
+            y: -75,
+            width: 1024,
+            height: 768,
+        },
+    ]);
+
+    let serialized = serde_json::to_string(&response).unwrap();
+    let expected = r#"{"VisibleWindows":[{"id":1,"x":100,"y":200,"width":800,"height":600},{"id":2,"x":-50,"y":-75,"width":1024,"height":768}]}"#;
+    assert_eq!(serialized, expected);
+
+    let deserialized: Response = serde_json::from_str(&serialized).unwrap();
+    assert_eq!(deserialized, response);
+}
+
+#[test]
+fn test_response_hidden_windows_serialization() {
+    let response = Response::HiddenWindows(vec![
+        WindowInfo {
+            id: 1,
+            x: 100,
+            y: 200,
+            width: 800,
+            height: 600,
+        },
+        WindowInfo {
+            id: 2,
+            x: -50,
+            y: -75,
+            width: 1024,
+            height: 768,
+        },
+    ]);
+
+    let serialized = serde_json::to_string(&response).unwrap();
+    let expected = r#"{"HiddenWindows":[{"id":1,"x":100,"y":200,"width":800,"height":600},{"id":2,"x":-50,"y":-75,"width":1024,"height":768}]}"#;
     assert_eq!(serialized, expected);
 
     let deserialized: Response = serde_json::from_str(&serialized).unwrap();

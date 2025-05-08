@@ -50,17 +50,11 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
             Response::NewWindows(new_wins)
         }
         Request::ListVisibleWindows => {
-            let wins = wm
-                .get_visible_wins()
-                .map(|(id, zindex)| WinZIndex { id, zindex })
-                .collect();
+            let wins = wm.get_visible_wins();
             Response::VisibleWindows(wins)
         }
         Request::ListHiddenWindows => {
-            let wins = wm
-                .get_hidden_wins()
-                .map(|(id, zindex)| WinZIndex { id, zindex })
-                .collect();
+            let wins = wm.get_hidden_wins();
             Response::HiddenWindows(wins)
         }
         Request::Commit => {

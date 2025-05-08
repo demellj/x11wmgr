@@ -341,14 +341,42 @@ impl WindowManager {
         new_wins
     }
 
-    /// Returns an iterator over the visible windows and their z-indices.
-    pub fn get_visible_wins(&self) -> impl Iterator<Item = (Window, ZIndexType)> + '_ {
-        self.visible_wins.values().map(|v| (v.id, v.index))
+    /// Returns a list of visible windows with their positions and dimensions as WindowInfo.
+    pub fn get_visible_wins(&self) -> Vec<WindowInfo> {
+        self.visible_wins
+            .values()
+            .map(|winfo| {
+                let id = winfo.id;
+                let (x, y) = self.windows_loc.get(&id).cloned().unwrap_or((0, 0));
+                let (width, height) = self.windows_size.get(&id).cloned().unwrap_or((0, 0));
+                WindowInfo {
+                    id,
+                    x,
+                    y,
+                    width,
+                    height,
+                }
+            })
+            .collect()
     }
 
-    /// Returns an iterator over the hidden windows and their z-indices.
-    pub fn get_hidden_wins(&self) -> impl Iterator<Item = (Window, ZIndexType)> + '_ {
-        self.hidden_wins.values().map(|v| (v.id, v.index))
+    /// Returns a list of hidden windows with their positions and dimensions as WindowInfo.
+    pub fn get_hidden_wins(&self) -> Vec<WindowInfo> {
+        self.hidden_wins
+            .values()
+            .map(|winfo| {
+                let id = winfo.id;
+                let (x, y) = self.windows_loc.get(&id).cloned().unwrap_or((0, 0));
+                let (width, height) = self.windows_size.get(&id).cloned().unwrap_or((0, 0));
+                WindowInfo {
+                    id,
+                    x,
+                    y,
+                    width,
+                    height,
+                }
+            })
+            .collect()
     }
 
     fn screen_ref(&self) -> &Screen {

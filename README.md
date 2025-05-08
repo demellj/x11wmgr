@@ -6,7 +6,7 @@ This window manager is designed around two lists of *mapped* windows: *visible* 
 
 The following are the supported commands. Note that all commands that modify window state (e.g., visibility, position, size, or z-index) require invoking the **Commit** command to apply the changes. Example inputs are provided for each command:
 
-1. **ListNewWindows** - returns a list of all new windows that were mapped since the last invocation of this very same command. New windows are automatically added to the hidden list.
+1. **ListNewWindows** - returns a list of all new windows that were mapped since the last invocation of this very same command. Each window in the response includes its ID, position (`x`, `y`), and dimensions (`width`, `height`). New windows are automatically added to the hidden list.
 
    ```json
    "ListNewWindows"

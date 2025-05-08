@@ -16,7 +16,7 @@ pub use x11rb::protocol::xproto::Window;
 pub type ZIndexType = u32;
 
 use crate::error::*;
-use crate::{WinMove, WinResize};
+use crate::{WinMove, WinResize, NewWindow};
 
 const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
 
@@ -40,8 +40,6 @@ pub struct Waker {
 
 pub struct WindowManager {
     conn: Arc<RustConnection>,
-    windows_loc: HashMap<Window, (i32, i32)>,
-    windows_size: HashMap<Window, (u32, u32)>,
     screen_num: usize,
 
     // window that spans the entire screen and has a black background.
@@ -52,6 +50,12 @@ pub struct WindowManager {
 
     // windows that are currently in the hidden stack
     hidden_wins: HashMap<Window, WinInfo>,
+
+    // Tracks the pending move operations for windows, storing their new (x, y) coordinates.
+    windows_loc: HashMap<Window, (i32, i32)>,
+
+    // Tracks the pending resize operations for windows, storing their new (width, height) dimensions.
+    windows_size: HashMap<Window, (u32, u32)>,
 
     // the last time new windows were queried
     last_discovery_time: Instant,
@@ -103,13 +107,13 @@ impl WindowManager {
         conn.flush()?;
 
         let mut wm = WindowManager {
-            windows_loc: HashMap::new(),
-            windows_size: HashMap::new(),
             conn: Arc::new(conn),
             screen_num,
             virtual_root_win: wid,
             visible_wins: HashMap::new(),
             hidden_wins: HashMap::new(),
+            windows_loc: HashMap::new(),
+            windows_size: HashMap::new(),
             last_discovery_time: Instant::now(),
             pending_input_atom,
         };
@@ -284,20 +288,25 @@ impl WindowManager {
 
     // check for newly discovered/mapped windows, sorted by recency,
     // with most recent windows frist
-    pub fn check_new(&mut self) -> Vec<Window> {
+    pub fn check_new(&mut self) -> Vec<NewWindow> {
         // new windows only go into hidden_wins
         let mut new_wins = self
             .hidden_wins
             .values()
             .filter(|winfo| winfo.discovery_time >= self.last_discovery_time)
-            .map(|winfo| winfo.id)
+            .map(|winfo| {
+                let id = winfo.id;
+                let (x, y) = self.windows_loc.get(&id).cloned().unwrap_or((0, 0));
+                let (width, height) = self.windows_size.get(&id).cloned().unwrap_or((0, 0));
+                NewWindow { id, x, y, width, height }
+            })
             .collect::<Vec<_>>();
 
         new_wins.sort_unstable_by_key(|w| {
             cmp::Reverse(
                 self.hidden_wins
-                    .get(w)
-                    .and_then(|w| Some(w.index))
+                    .get(&w.id)
+                    .and_then(|win_info| Some(win_info.index))
                     .unwrap_or(0),
             )
         });

@@ -44,21 +44,29 @@ pub enum Request {
     MoveWindows(Vec<WinMove>),
     ListVisibleWindows,
     ListHiddenWindows,
-    Commit,
     FocusWindow(Window),
+    Commit,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct NewWindow {
+    pub id: Window,
+    pub x: i32,
+    pub y: i32,
+    pub width: u32,
+    pub height: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Response {
     VisibiltyChanged(Vec<Window>),
     ZIndexChanged(Vec<Window>),
-    NewWindows(Vec<Window>),
+    NewWindows(Vec<NewWindow>),
     VisibleWindows(Vec<WinZIndex>),
     HiddenWindows(Vec<WinZIndex>),
     CommitComplete,
     MoveComplete,
     ResizeComplete,
-
     WindowFocused(bool),
 }
 

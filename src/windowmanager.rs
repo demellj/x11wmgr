@@ -495,6 +495,8 @@ impl WindowManager {
     fn handle_unmap_notify(&mut self, event: UnmapNotifyEvent) -> Result<(), Error> {
         self.hidden_wins.remove(&event.window);
         self.visible_wins.remove(&event.window);
+        self.windows_loc.remove(&event.window);
+        self.windows_size.remove(&event.window);
         Ok(())
     }
 

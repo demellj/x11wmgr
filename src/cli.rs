@@ -49,7 +49,7 @@ pub enum Request {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct NewWindow {
+pub struct WindowInfo {
     pub id: Window,
     pub x: i32,
     pub y: i32,
@@ -61,7 +61,7 @@ pub struct NewWindow {
 pub enum Response {
     VisibiltyChanged(Vec<Window>),
     ZIndexChanged(Vec<Window>),
-    NewWindows(Vec<NewWindow>),
+    NewWindows(Vec<WindowInfo>),
     VisibleWindows(Vec<WinZIndex>),
     HiddenWindows(Vec<WinZIndex>),
     CommitComplete,

@@ -16,7 +16,7 @@ pub use x11rb::protocol::xproto::Window;
 pub type ZIndexType = u32;
 
 use crate::error::*;
-use crate::{NewWindow, WinMove, WinResize};
+use crate::{WinMove, WinResize, WindowInfo};
 
 const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
 
@@ -309,7 +309,7 @@ impl WindowManager {
     // with most recent windows frist
     /// Checks for newly discovered or mapped windows since the last query.
     /// Returns a list of new windows along with their positions and dimensions.
-    pub fn check_new(&mut self) -> Vec<NewWindow> {
+    pub fn check_new(&mut self) -> Vec<WindowInfo> {
         // new windows only go into hidden_wins
         let mut new_wins = self
             .hidden_wins
@@ -319,7 +319,7 @@ impl WindowManager {
                 let id = winfo.id;
                 let (x, y) = self.windows_loc.get(&id).cloned().unwrap_or((0, 0));
                 let (width, height) = self.windows_size.get(&id).cloned().unwrap_or((0, 0));
-                NewWindow {
+                WindowInfo {
                     id,
                     x,
                     y,

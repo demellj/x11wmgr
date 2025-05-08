@@ -1,5 +1,5 @@
 use serde_json;
-use x11wmgr::{NewWindow, Request, Response, WinMove, WinResize, WinVisbilty, WinZIndex};
+use x11wmgr::{WindowInfo, Request, Response, WinMove, WinResize, WinVisbilty, WinZIndex};
 
 #[test]
 fn test_request_move_windows_serialization() {
@@ -116,14 +116,14 @@ fn test_request_commit_serialization() {
 #[test]
 fn test_response_new_windows_serialization() {
     let response = Response::NewWindows(vec![
-        NewWindow {
+        WindowInfo {
             id: 1,
             x: 100,
             y: 200,
             width: 800,
             height: 600,
         },
-        NewWindow {
+        WindowInfo {
             id: 2,
             x: -50,
             y: -75,

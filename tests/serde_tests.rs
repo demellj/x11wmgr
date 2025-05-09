@@ -1,5 +1,5 @@
 use serde_json;
-use x11wmgr::{Request, Response, WinMove, WinResize, WinVisbilty, WinZIndex, WindowInfo};
+use x11wmgr::messages::{Request, Response, WinMove, WinResize, WinVisbilty, WinZIndex, WindowInfo};
 
 #[test]
 fn test_request_move_windows_serialization() {

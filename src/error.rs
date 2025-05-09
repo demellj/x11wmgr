@@ -12,8 +12,7 @@ use x11rb::errors::ReplyError;
 use x11rb::protocol::xproto::ACCESS_ERROR;
 use x11rb::x11_utils::X11Error;
 
-use crate::cli::Response;
-use crate::Request;
+use crate::messages::{Request, Response};
 
 #[derive(Debug, Error)]
 pub enum ErrorKind {

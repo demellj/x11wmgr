@@ -2,6 +2,7 @@ use std::sync::mpsc::channel;
 
 use std::process::exit;
 
+use x11wmgr::messages::{Request, Response};
 use x11wmgr::*;
 
 fn main() {
@@ -73,7 +74,6 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
             wm.move_windows(windows.into_iter())?;
             Response::MoveComplete
         }
-
     };
 
     Ok(resp)

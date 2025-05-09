@@ -16,7 +16,7 @@ pub use x11rb::protocol::xproto::Window;
 pub type ZIndexType = u32;
 
 use crate::error::*;
-use crate::{WinMove, WinResize, WinZIndex, WinVisbilty, WindowInfo};
+use crate::messages::{WinMove, WinResize, WinZIndex, WinVisbilty, WindowInfo};
 
 const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
 

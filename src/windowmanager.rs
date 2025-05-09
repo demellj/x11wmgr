@@ -16,7 +16,7 @@ pub use x11rb::protocol::xproto::Window;
 pub type ZIndexType = u32;
 
 use crate::error::*;
-use crate::{WinMove, WinResize, WinZIndex, WindowInfo};
+use crate::{WinMove, WinResize, WinZIndex, WinVisbilty, WindowInfo};
 
 const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
 
@@ -199,11 +199,12 @@ impl WindowManager {
     /// Returns a list of windows whose visibility was successfully updated.
     pub fn change_visiblity<I>(&mut self, iter: I) -> Vec<Window>
     where
-        I: Iterator<Item = (Window, bool)>,
+        I: Iterator<Item = WinVisbilty>,
     {
         let mut changed_wins = Vec::new();
 
-        for (winid, to_visible) in iter {
+        for win_visibility in iter {
+            let WinVisbilty { id: winid, visible: to_visible } = win_visibility;
             if to_visible {
                 if let Some(mut v) = self.hidden_wins.remove(&winid) {
                     v.last_update_time = Instant::now();

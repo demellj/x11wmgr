@@ -38,7 +38,7 @@ fn run() -> Result<(), Error> {
 fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Error> {
     let resp = match req {
         Request::ChangeVisibility(win_vis) => {
-            let result = wm.change_visiblity(win_vis.into_iter().map(|v| (v.id, v.visible)));
+            let result = wm.change_visiblity(win_vis.into_iter());
             Response::VisibiltyChanged(result)
         }
         Request::ChangeZIndex(win_indices) => {

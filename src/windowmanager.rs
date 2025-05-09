@@ -16,7 +16,7 @@ pub use x11rb::protocol::xproto::Window;
 pub type ZIndexType = u32;
 
 use crate::error::*;
-use crate::{WinMove, WinResize, WindowInfo};
+use crate::{WinMove, WinResize, WinZIndex, WindowInfo};
 
 const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
 
@@ -170,20 +170,21 @@ impl WindowManager {
     /// Returns a list of windows whose z-index was successfully updated.
     pub fn change_indices<I>(&mut self, iter: I) -> Vec<Window>
     where
-        I: Iterator<Item = (Window, ZIndexType)>,
+        I: Iterator<Item = WinZIndex>,
     {
         let mut changed_wins = Vec::new();
 
-        for (id, index) in iter {
+        for win_zindex in iter {
+            let WinZIndex { id, zindex } = win_zindex;
             if let Some(v) = self.hidden_wins.get_mut(&id) {
-                if v.index != index {
-                    v.index = index;
+                if v.index != zindex {
+                    v.index = zindex;
                     v.last_update_time = Instant::now();
                     changed_wins.push(id);
                 }
             } else if let Some(v) = self.visible_wins.get_mut(&id) {
-                if v.index != index {
-                    v.index = index;
+                if v.index != zindex {
+                    v.index = zindex;
                     v.last_update_time = Instant::now();
                     changed_wins.push(id);
                 }

@@ -42,7 +42,7 @@ fn handle_request(wm: &mut WindowManager, req: Request) -> Result<Response, Erro
             Response::VisibiltyChanged(result)
         }
         Request::ChangeZIndex(win_indices) => {
-            let result = wm.change_indices(win_indices.into_iter().map(|v| (v.id, v.zindex)));
+            let result = wm.change_indices(win_indices.into_iter());
             Response::ZIndexChanged(result)
         }
         Request::ListNewWindows => {

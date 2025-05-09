@@ -11,7 +11,23 @@ x11rb = { version = "*", features = ["all-extensions"] }
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 thiserror = "*"
+warp = { version = "0.3", optional = true }
+tokio = { version = "1", optional = true, features = [
+    "rt-multi-thread",
+    "macros",
+    "net",
+    "time",
+] }
+
+[features]
+default = []
+websrvc = ["warp", "tokio"]
 
 [[bin]]
 name = "x11wmgr"
 path = "bin/x11wmgr.rs"
+
+[[bin]]
+name = "websrvc"
+path = "bin/websrvc.rs"
+required-features = ["websrvc"]

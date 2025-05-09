@@ -65,6 +65,9 @@ impl Display for Error {
 
 impl std::error::Error for Error {}
 
+#[cfg(feature = "websrvc")]
+impl warp::reject::Reject for Error {}
+
 impl From<IOError> for Error {
     fn from(error: IOError) -> Self {
         Error(Arc::new(ErrorKind::IOError(error)))

@@ -11,3 +11,7 @@ x11rb = { version = "*", features = ["all-extensions"] }
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
 thiserror = "*"
+
+[[bin]]
+name = "x11wmgr"
+path = "bin/x11wmgr.rs"

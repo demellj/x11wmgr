@@ -168,14 +168,15 @@ impl WindowManager {
 
     /// Updates the z-index of specified windows.
     /// Returns a list of windows whose z-index was successfully updated.
-    pub fn change_indices<I>(&mut self, iter: I) -> Vec<Window>
+    pub fn change_indices<I, T>(&mut self, iter: I) -> Vec<Window>
     where
-        I: Iterator<Item = WinZIndex>,
+        I: Iterator<Item = T>,
+        T: Into<WinZIndex>,
     {
         let mut changed_wins = Vec::new();
 
-        for win_zindex in iter {
-            let WinZIndex { id, zindex } = win_zindex;
+        for item in iter {
+            let WinZIndex { id, zindex } = item.into();
             if let Some(v) = self.hidden_wins.get_mut(&id) {
                 if v.index != zindex {
                     v.index = zindex;
@@ -197,14 +198,15 @@ impl WindowManager {
     /// Changes the visibility of specified windows.
     /// Moves windows between the visible and hidden lists based on the provided visibility flag.
     /// Returns a list of windows whose visibility was successfully updated.
-    pub fn change_visiblity<I>(&mut self, iter: I) -> Vec<Window>
+    pub fn change_visiblity<I, T>(&mut self, iter: I) -> Vec<Window>
     where
-        I: Iterator<Item = WinVisbilty>,
+        I: Iterator<Item = T>,
+        T: Into<WinVisbilty>,
     {
         let mut changed_wins = Vec::new();
 
-        for win_visibility in iter {
-            let WinVisbilty { id: winid, visible: to_visible } = win_visibility;
+        for item in iter {
+            let WinVisbilty { id: winid, visible: to_visible } = item.into();
             if to_visible {
                 if let Some(mut v) = self.hidden_wins.remove(&winid) {
                     v.last_update_time = Instant::now();
@@ -242,11 +244,13 @@ impl WindowManager {
     // resize multiple windows (deferred)
     /// Queues resize operations for the specified windows.
     /// The changes will only take effect after the `commit` method is called.
-    pub fn resize_windows<I>(&mut self, iter: I) -> Result<(), Error>
+    pub fn resize_windows<I, T>(&mut self, iter: I) -> Result<(), Error>
     where
-        I: Iterator<Item = WinResize>,
+        I: Iterator<Item = T>,
+        T: Into<WinResize>,
     {
-        for WinResize { id, width, height } in iter {
+        for item in iter {
+            let WinResize { id, width, height } = item.into();
             self.windows_size.insert(id, (width, height));
         }
         Ok(())
@@ -255,11 +259,13 @@ impl WindowManager {
     // move multiple windows (deferred)
     /// Queues move operations for the specified windows.
     /// The changes will only take effect after the `commit` method is called.
-    pub fn move_windows<I>(&mut self, iter: I) -> Result<(), Error>
+    pub fn move_windows<I, T>(&mut self, iter: I) -> Result<(), Error>
     where
-        I: Iterator<Item = WinMove>,
+        I: Iterator<Item = T>,
+        T: Into<WinMove>,
     {
-        for WinMove { id, x, y } in iter {
+        for item in iter {
+            let WinMove { id, x, y } = item.into();
             self.windows_loc.insert(id, (x, y));
         }
         Ok(())

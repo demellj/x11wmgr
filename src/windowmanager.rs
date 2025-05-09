@@ -16,7 +16,7 @@ pub use x11rb::protocol::xproto::Window;
 pub type ZIndexType = u32;
 
 use crate::error::*;
-use crate::messages::{WinMove, WinResize, WinZIndex, WinVisbilty, WindowInfo};
+use crate::messages::{WinMove, WinResize, WinVisbilty, WinZIndex, WindowInfo};
 
 const PENDING_INPUT_ATOM_NAME: &'static str = "__WMGR_PENDING_INPUT";
 
@@ -206,7 +206,10 @@ impl WindowManager {
         let mut changed_wins = Vec::new();
 
         for item in iter {
-            let WinVisbilty { id: winid, visible: to_visible } = item.into();
+            let WinVisbilty {
+                id: winid,
+                visible: to_visible,
+            } = item.into();
             if to_visible {
                 if let Some(mut v) = self.hidden_wins.remove(&winid) {
                     v.last_update_time = Instant::now();
@@ -227,7 +230,7 @@ impl WindowManager {
 
     /// Sets the input focus to the specified window.
     /// Returns `true` if the window is in the visible list and the focus was successfully set.
-    pub fn focus_window(&self, id: Window) -> Result<bool, Error> {
+    pub fn focus_window(&mut self, id: Window) -> Result<bool, Error> {
         if self.visible_wins.contains_key(&id) {
             let cookie = self
                 .conn
